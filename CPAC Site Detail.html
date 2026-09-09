@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>รายละเอียดหน่วยงาน — CPAC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="cpac-base.css" />
+<style>
+.topbar{ background:#fff; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:20; }
+.topbar-in{ max-width:860px; margin:0 auto; display:flex; align-items:center; gap:14px; padding:13px 20px; }
+.back{ display:flex; align-items:center; gap:7px; text-decoration:none; color:var(--ink); font-size:14px; font-weight:600; background:var(--bg); border:1px solid var(--line); border-radius:9px; padding:8px 13px; transition:.15s; }
+.back:hover{ background:#fff; border-color:var(--cpac-blue-line); color:var(--cpac-blue-dark); }
+.tb-title{ font-weight:700; font-size:16px; }
+.tb-spacer{ flex:1; }
+.act-btn{ font-family:inherit; font-size:13.5px; font-weight:700; border-radius:10px; padding:10px 15px; cursor:pointer; border:none; display:inline-flex; align-items:center; gap:6px; }
+.act-edit{ color:#fff; background:linear-gradient(135deg,#00AEE0,#0090C4); box-shadow:0 4px 12px rgba(0,150,210,.25); }
+.act-del{ color:var(--loss); background:var(--loss-soft); border:1px solid #F4CFCC; }
+.act-del:hover{ background:var(--loss); color:#fff; }
+
+.page{ max-width:860px; margin:0 auto; padding:24px 20px 60px; }
+
+/* hero */
+.hero{ background:var(--card); border:1px solid var(--line); border-radius:18px; box-shadow:var(--shadow); padding:24px 26px; }
+.hero .toprow{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.hero .badge{ font-size:13px; padding:6px 14px; }
+.hero .code{ font-size:13px; color:var(--cpac-blue-dark); font-weight:700; background:var(--cpac-blue-soft); border-radius:20px; padding:6px 13px; }
+.hero h1{ margin:14px 0 0; font-size:26px; font-weight:700; letter-spacing:-.4px; line-height:1.25; }
+.hero .loc{ margin-top:8px; font-size:14px; color:var(--muted); display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.hero .keyfacts{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:22px; padding-top:20px; border-top:1px solid var(--line); }
+.kf .l{ font-size:12px; color:var(--muted); font-weight:500; }
+.kf .v{ font-size:21px; font-weight:700; margin-top:4px; letter-spacing:-.4px; }
+.kf .v small{ font-size:12px; font-weight:500; color:var(--muted); }
+
+/* detail sections */
+.sec{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); margin-top:16px; overflow:hidden; }
+.sec-head{ display:flex; align-items:center; gap:10px; padding:15px 20px; border-bottom:1px solid var(--line); }
+.sec-head .ic{ width:28px; height:28px; flex:none; background:var(--cpac-blue-soft); color:var(--cpac-blue-dark); border-radius:8px; font-size:14px; display:flex; align-items:center; justify-content:center; }
+.sec-head h2{ margin:0; font-size:15px; font-weight:700; }
+.kv{ display:grid; grid-template-columns:1fr 1fr; }
+.kv .row{ display:flex; justify-content:space-between; align-items:baseline; gap:14px; padding:14px 20px; border-bottom:1px solid var(--line); }
+.kv .row .k{ font-size:13.5px; color:var(--muted); }
+.kv .row .v{ font-size:14.5px; font-weight:600; text-align:right; }
+.kv .row.full{ grid-column:1 / -1; }
+.maplink{ color:var(--cpac-blue-dark); text-decoration:none; font-weight:700; }
+.maplink:hover{ text-decoration:underline; }
+.note-box{ padding:16px 20px; font-size:14px; color:var(--ink); line-height:1.6; white-space:pre-wrap; }
+.note-box.empty{ color:var(--faint); }
+.note-label{ padding:14px 20px 0; font-size:12.5px; font-weight:700; color:var(--muted); }
+.photo-gallery{ display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px; padding:16px 20px; }
+.pg-thumb{ border:1px solid var(--line); border-radius:10px; overflow:hidden; cursor:pointer; padding:0; background:var(--bg); aspect-ratio:4/3; transition:.13s; }
+.pg-thumb:hover{ border-color:var(--cpac-blue); transform:translateY(-2px); box-shadow:0 6px 16px rgba(16,38,62,.14); }
+.pg-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+
+/* month bars (vertical) */
+.mbars{ padding:22px 20px 16px; }
+.vchart{ display:flex; align-items:flex-end; gap:10px; height:170px; padding:0 2px; }
+.vcol{ flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; }
+.vcol .vv{ font-size:11px; font-weight:700; color:var(--cpac-blue-dark); margin-bottom:6px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.vcol .vbar{ width:100%; max-width:42px; background:linear-gradient(180deg,#22C0EE,#0090C4); border-radius:7px 7px 0 0; min-height:4px; transition:height .5s cubic-bezier(.2,.8,.2,1); }
+.vcol .vm{ font-size:11px; font-weight:600; color:var(--muted); margin-top:8px; text-transform:uppercase; }
+.vaxis{ display:flex; align-items:center; gap:8px; margin-top:14px; font-size:11.5px; color:var(--faint); }
+.vaxis .ln{ flex:1; height:1px; background:var(--line); }
+
+.notfound{ text-align:center; padding:70px 20px; color:var(--muted); }
+.notfound .big{ font-size:46px; }
+.notfound a{ color:var(--cpac-blue-dark); font-weight:700; text-decoration:none; }
+
+/* ===== modal ===== */
+.modal-bg{ position:fixed; inset:0; z-index:100; background:rgba(16,32,43,.5); display:none; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px); }
+.modal-bg.show{ display:flex; }
+.modal{ background:#fff; border-radius:16px; width:100%; max-width:480px; max-height:90vh; overflow:auto; box-shadow:0 20px 60px rgba(16,38,62,.3); }
+.modal-head{ display:flex; align-items:center; justify-content:space-between; padding:18px 20px 14px; border-bottom:1px solid var(--line); position:sticky; top:0; background:#fff; }
+.modal-head h3{ margin:0; font-size:16px; font-weight:700; }
+.modal-head .x{ border:none; background:var(--bg); width:30px; height:30px; border-radius:8px; cursor:pointer; font-size:15px; color:var(--muted); }
+.modal-body{ padding:16px 20px 4px; }
+.mfield{ margin-bottom:14px; }
+.mfield label{ display:block; font-size:12.5px; font-weight:600; color:var(--muted); margin-bottom:5px; }
+.mfield input, .mfield select{ width:100%; font-family:inherit; font-size:14px; color:var(--ink); background:#fff; border:1.5px solid var(--line); border-radius:9px; padding:10px 11px; outline:none; transition:.15s; -webkit-appearance:none; appearance:none; }
+.mfield input:focus, .mfield select:focus{ border-color:var(--cpac-blue); box-shadow:0 0 0 3px rgba(0,150,210,.12); }
+.mrow{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.modal-foot{ display:flex; gap:10px; padding:14px 20px 20px; position:sticky; bottom:0; background:#fff; }
+.modal-foot button{ flex:1; padding:12px; border-radius:10px; font-family:inherit; font-size:14px; font-weight:700; cursor:pointer; }
+.btn-cancel{ background:var(--bg); color:var(--muted); border:1px solid var(--line); }
+.btn-save{ background:linear-gradient(135deg,#00AEE0,#0090C4); color:#fff; border:none; }
+
+.toast{ position:fixed; left:50%; bottom:30px; transform:translateX(-50%) translateY(20px); background:var(--ink); color:#fff; padding:12px 22px; border-radius:30px; font-size:14px; font-weight:500; opacity:0; pointer-events:none; transition:all .3s; z-index:120; box-shadow:0 10px 30px rgba(0,0,0,.28); display:flex; align-items:center; gap:8px; }
+.toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+.toast .check{ color:#5BE38C; font-weight:700; }
+
+@media (max-width:680px){
+  .hero .keyfacts{ grid-template-columns:repeat(2,1fr); }
+  .kv{ grid-template-columns:1fr; }
+  .tb-title{ display:none; }
+}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-in">
+    <a href="CPAC My Sites.html" class="back">‹ งานของฉัน</a>
+    <div class="tb-title">รายละเอียดหน่วยงาน</div>
+    <div class="tb-spacer"></div>
+    <button class="act-btn act-del" id="delBtn" style="display:none;">🗑 ลบ</button>
+    <button class="act-btn act-edit" id="editBtn" style="display:none;">✎ แก้ไข</button>
+  </div>
+</div>
+
+<div class="page" id="page"></div>
+
+<!-- edit modal -->
+<div class="modal-bg" id="editModal">
+  <div class="modal">
+    <div class="modal-head"><h3>แก้ไขข้อมูลหน่วยงาน</h3><button type="button" class="x" id="mClose">✕</button></div>
+    <div class="modal-body">
+      <div class="mfield"><label>ชื่อหน่วยงาน</label><input type="text" id="mSite" /></div>
+      <div class="mrow">
+        <div class="mfield"><label>สถานะงาน</label>
+          <select id="mStatus"><option value="Win">Win</option><option value="Loss">Loss</option><option value="Follow">Follow</option></select>
+        </div>
+        <div class="mfield"><label>ปริมาณรวม (ลบ.ม.)</label><input type="number" id="mVol" min="0" step="100" /></div>
+      </div>
+      <div class="mrow">
+        <div class="mfield"><label>ระยะจัดส่ง</label><input type="number" id="mDist" min="0" step="0.1" /></div>
+        <div class="mfield"><label>คาดว่าจะเริ่มใช้</label>
+          <select id="mStart"></select>
+        </div>
+      </div>
+      <div class="mrow">
+        <div class="mfield"><label>ส่วนลด CPAC (%)</label><input type="number" id="mDisc" min="0" max="100" step="0.5" /></div>
+        <div class="mfield"><label>ส่วนลดคู่แข่ง (%)</label><input type="number" id="mCdisc" min="0" max="100" step="0.5" /></div>
+      </div>
+      <div class="mfield"><label>คู่แข่ง</label>
+        <select id="mComp"><option value="">— ไม่มี —</option><option>INSEE</option><option>น่ำเฮง</option><option>TPI</option><option>M</option><option>Q-Mix</option><option>ORC</option><option>เอกชนรายย่อย</option></select>
+      </div>
+      <div class="mfield"><label>สาเหตุ / ติดที่ (Loss / Follow)</label><input type="text" id="mReason" placeholder="เช่น ราคา, เครดิต, ระยะทาง" /></div>
+      <div class="mfield"><label>ลิงก์แผนที่ (Google Maps)</label><input type="text" id="mMap" placeholder="https://maps.google.com/..." /></div>
+      <div class="mfield"><label>รายละเอียดโครงการ</label><textarea id="mProjectDetail" rows="2" placeholder="ประเภทงาน / ขนาดโครงการ..." style="width:100%;font-family:inherit;font-size:14px;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:9px;padding:10px 11px;outline:none;resize:vertical;"></textarea></div>
+      <div class="mfield"><label>รายละเอียดเพิ่มเติม</label><textarea id="mDetail" rows="2" placeholder="หมายเหตุ / เงื่อนไข / ข้อตกลง..." style="width:100%;font-family:inherit;font-size:14px;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:9px;padding:10px 11px;outline:none;resize:vertical;"></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button type="button" class="btn-cancel" id="mCancel">ยกเลิก</button>
+      <button type="button" class="btn-save" id="mSave">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span class="check">✓</span> <span id="toastMsg">บันทึกแล้ว</span></div>
+
+<script src="cpac-app.js"></script>
+<script>
+const S = CPAC.requireRole('staff', 'CPAC Staff Login.html');
+if(S){
+  CPAC.seed();
+  const params = new URLSearchParams(location.search);
+  const id = params.get('id');
+  let rec = CPAC.findEntry(id);
+  const page = document.getElementById('page');
+  const toast = document.getElementById('toast');
+  const $ = x => document.getElementById(x);
+
+  function showToast(msg){ $('toastMsg').textContent = msg; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'), 1800); }
+
+  /* เติมตัวเลือกเดือน/ปี ในโมดอล */
+  (function(){
+    const sel = $('mStart');
+    sel.innerHTML = '<option value="">—</option>';
+    [2026,2027,2028].forEach(y=> CPAC.TH_MONTHS.forEach((m,i)=>{
+      const o=document.createElement('option'); o.value=`${y}-${String(i+1).padStart(2,'0')}`; o.textContent=`${m} ${y}`; sel.appendChild(o);
+    }));
+  })();
+
+  if(!rec || rec.user !== S.username){
+    page.innerHTML = `<div class="notfound"><div class="big">🔍</div><h3>ไม่พบหน่วยงานนี้</h3><p>อาจถูกลบไปแล้ว หรือไม่ใช่หน่วยงานของคุณ</p><a href="CPAC My Sites.html">‹ กลับไปงานของฉัน</a></div>`;
+  } else {
+    $('editBtn').style.display = '';
+    $('delBtn').style.display = '';
+    renderDetail();
+  }
+
+  function renderDetail(){
+    const d = rec;
+    const extraComp = (d.competitorsExtra||[]).filter(c=>c && c.name);
+    const compTxt = d.status==='Win' ? '<span style="color:var(--win)">CPAC ปิดงานได้</span>'
+      : d.status==='Loss' ? `<span style="color:var(--loss)">${d.competitor||'คู่แข่ง'}</span>`
+      : (d.competitor || '—');
+    const mapRow = d.mapUrl
+      ? `<a class="maplink" href="${d.mapUrl}" target="_blank" rel="noopener">📍 เปิด Google Maps ›</a>`
+      : '<span style="color:var(--faint)">— ไม่ได้แนบ —</span>';
+    /* month bars: ถ้ามีข้อมูลรายเดือน vol_XXX ใช้, ไม่งั้นโชว์รวม */
+    const monthKeys = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    const hasMonthly = monthKeys.some(m=> Number(d['vol_'+m])>0);
+    let monthlyHtml = '';
+    if(hasMonthly){
+      const max = Math.max(...monthKeys.map(m=>Number(d['vol_'+m])||0), 1);
+      const months = monthKeys.filter(m=>Number(d['vol_'+m])>0);
+      monthlyHtml = `<div class="sec"><div class="sec-head"><span class="ic">▥</span><h2>ปริมาณคอนกรีตรายเดือน</h2></div>
+        <div class="mbars"><div class="vchart">${months.map(m=>{
+          const v=Number(d['vol_'+m])||0;
+          return `<div class="vcol"><span class="vv">${CPAC.fmt(v)}</span><div class="vbar" style="height:${Math.max(v/max*100,3)}%"></div><span class="vm">${m}</span></div>`;
+        }).join('')}</div><div class="vaxis"><span>ลบ.ม. / เดือน</span><span class="ln"></span><span>รวม ${CPAC.fmt(d.vol)} ลบ.ม.</span></div></div></div>`;
+    }
+
+    page.innerHTML = `
+      <div class="hero">
+        <div class="toprow">
+          <span class="badge ${d.status}"><span class="d"></span>${CPAC.STATUS_TH[d.status]||d.status}</span>
+          <span class="code">${d.code||'ไม่มี Site code'}</span>
+        </div>
+        <h1>${d.site}</h1>
+        <div class="loc">📍 ${d.metro} · ${d.cluster} <span style="color:var(--faint)">|</span> โรงงาน ${d.plant}</div>
+        <div class="keyfacts">
+          <div class="kf"><div class="l">ปริมาณรวม</div><div class="v">${CPAC.fmt(d.vol)} <small>ลบ.ม.</small></div></div>
+          <div class="kf"><div class="l">ระยะจัดส่ง</div><div class="v">${(d.dist||0).toFixed(1)}</div></div>
+          <div class="kf"><div class="l">ส่วนลด CPAC</div><div class="v">${(d.disc||0).toFixed(1)}<small>%</small></div></div>
+          <div class="kf"><div class="l">คาดว่าจะเริ่มใช้</div><div class="v" style="font-size:17px">${CPAC.startTxt(d.start)}</div></div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-head"><span class="ic">▤</span><h2>ข้อมูลพื้นที่ & การแข่งขัน</h2></div>
+        <div class="kv">
+          <div class="row"><span class="k">Metro</span><span class="v">${d.metro}</span></div>
+          <div class="row"><span class="k">Cluster</span><span class="v">${d.cluster}</span></div>
+          <div class="row"><span class="k">โรงงานจัดส่ง</span><span class="v">${d.plant}</span></div>
+          <div class="row"><span class="k">ระยะจัดส่ง</span><span class="v">${(d.dist||0).toFixed(1)}</span></div>
+          <div class="row"><span class="k">ผรม. (ผู้รับเหมา)</span><span class="v">${d.contractor || '—'}</span></div>
+          <div class="row"><span class="k">เบอร์ติดต่อลูกค้า</span><span class="v">${d.customerPhone ? `<a href="tel:${d.customerPhone}" style="color:var(--cpac-blue-dark);text-decoration:none;">${d.customerPhone}</a>` : '—'}</span></div>
+          <div class="row"><span class="k">ปริมาณทั้งโครงการ</span><span class="v">${d.projectVol ? CPAC.fmt(d.projectVol)+' ลบ.ม.' : '—'}</span></div>
+          <div class="row"><span class="k">ผู้ปิดงาน / คู่แข่ง</span><span class="v">${compTxt}</span></div>
+          ${extraComp.map(c=>`<div class="row"><span class="k">คู่แข่ง (เพิ่ม)</span><span class="v">${c.name} · ส่วนลด ${(c.disc||0).toFixed(1)}%</span></div>`).join('')}
+          <div class="row"><span class="k">${d.status==='Win'?'สถานะ':'สาเหตุ / ติดที่'}</span><span class="v">${d.reason || (d.status==='Win'?'Win':'—')}</span></div>
+          <div class="row"><span class="k">ส่วนลด CPAC</span><span class="v">${(d.disc||0).toFixed(1)}%</span></div>
+          <div class="row"><span class="k">ส่วนลดคู่แข่ง</span><span class="v">${(d.cdisc||0).toFixed(1)}%</span></div>
+        </div>
+      </div>
+
+      ${monthlyHtml}
+
+      ${(d.photos&&d.photos.length) ? `<div class="sec">
+        <div class="sec-head"><span class="ic">📷</span><h2>รูปภาพหน่วยงาน (${d.photos.length})</h2></div>
+        <div class="photo-gallery">${d.photos.map((p,i)=>`<button type="button" class="pg-thumb" data-i="${i}"><img src="${p}" alt="รูปหน่วยงาน ${i+1}" /></button>`).join('')}</div>
+      </div>` : ''}
+
+      <div class="sec">
+        <div class="sec-head"><span class="ic">▦</span><h2>รายละเอียดโครงการ</h2></div>
+        <div class="note-label">รายละเอียดโครงการ</div>
+        ${d.projectDetail ? `<div class="note-box">${d.projectDetail}</div>` : '<div class="note-box empty">— ไม่ได้ระบุ —</div>'}
+        <div class="note-label">รายละเอียดเพิ่มเติม</div>
+        ${d.detail ? `<div class="note-box">${d.detail}</div>` : '<div class="note-box empty">— ไม่มีรายละเอียดเพิ่มเติม —</div>'}
+      </div>
+
+      <div class="sec">
+        <div class="sec-head"><span class="ic">📍</span><h2>ตำแหน่ง & หมายเหตุ</h2></div>
+        <div class="kv">
+          <div class="row full"><span class="k">แผนที่หน่วยงาน</span><span class="v">${mapRow}</span></div>
+          <div class="row"><span class="k">วันที่ทราบข้อมูล</span><span class="v">${d.knownDate ? new Date(d.knownDate).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'}) : '—'}</span></div>
+          <div class="row"><span class="k">วันที่บันทึก</span><span class="v">${CPAC.dateTxt(d.ts)}</span></div>
+        </div>
+      </div>
+    `;
+  }
+
+  /* ===== แก้ไข ===== */
+  const modal = $('editModal');
+  function openEdit(){
+    const d = rec;
+    $('mSite').value = d.site||''; $('mStatus').value=d.status||'Win';
+    $('mVol').value=d.vol||0; $('mDist').value=d.dist||0; $('mStart').value=d.start||'';
+    $('mDisc').value=d.disc||0; $('mCdisc').value=d.cdisc||0;
+    $('mComp').value=d.competitor||''; $('mReason').value=d.reason||''; $('mMap').value=d.mapUrl||'';
+    $('mProjectDetail').value=d.projectDetail||''; $('mDetail').value=d.detail||'';
+    modal.classList.add('show');
+  }
+  function closeEdit(){ modal.classList.remove('show'); }
+  $('editBtn').addEventListener('click', openEdit);
+  /* คลิกรูปในแกลเลอรี — เปิด lightbox */
+  page.addEventListener('click', e=>{
+    const th = e.target.closest('.pg-thumb');
+    if(th && rec && rec.photos){ CPAC.lightbox(rec.photos, Number(th.dataset.i)||0); }
+  });
+  $('mClose').addEventListener('click', closeEdit);
+  $('mCancel').addEventListener('click', closeEdit);
+  modal.addEventListener('click', e=>{ if(e.target===modal) closeEdit(); });
+
+  $('mSave').addEventListener('click', ()=>{
+    const changes = {
+      site: $('mSite').value.trim() || rec.site,
+      status: $('mStatus').value,
+      vol: Number($('mVol').value)||0,
+      dist: Number($('mDist').value)||0,
+      start: $('mStart').value,
+      disc: Number($('mDisc').value)||0,
+      cdisc: Number($('mCdisc').value)||0,
+      competitor: $('mComp').value,
+      reason: $('mReason').value.trim(),
+      mapUrl: $('mMap').value.trim(),
+      map: $('mMap').value.trim() ? 1 : 0,
+      projectDetail: $('mProjectDetail').value.trim(),
+      detail: $('mDetail').value.trim(),
+    };
+    rec = CPAC.updateEntry(rec.ts, changes);
+    closeEdit();
+    renderDetail();
+    showToast('บันทึกการแก้ไขแล้ว');
+  });
+
+  /* ===== ลบ ===== */
+  $('delBtn').addEventListener('click', ()=>{
+    if(confirm('ต้องการลบหน่วยงาน "'+rec.site+'" ใช่หรือไม่?')){
+      CPAC.deleteEntry(rec.ts);
+      location.href = 'CPAC My Sites.html';
+    }
+  });
+}
+</script>
+</body>
+</html>

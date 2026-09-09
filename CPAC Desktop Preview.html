@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>มุมมองคอม · บันทึกงานขาย — CPAC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  html,body{ margin:0; padding:0; }
+  body{
+    min-height:100vh; display:flex; flex-direction:column; align-items:center;
+    padding:0 0 40px;
+    font-family:"IBM Plex Sans Thai",system-ui,sans-serif;
+    background:
+      radial-gradient(900px 500px at 15% -10%, #D9F2FC 0%, rgba(217,242,252,0) 60%),
+      radial-gradient(800px 600px at 110% 120%, #E2F5FB 0%, rgba(226,245,251,0) 55%),
+      #EEF4F9;
+  }
+  .topbar{
+    width:100%; box-sizing:border-box; display:flex; align-items:center; gap:16px;
+    padding:13px 26px; background:#fff; border-bottom:1px solid #E3E9F0;
+    box-shadow:0 1px 3px rgba(16,38,62,.04); position:sticky; top:0; z-index:30;
+  }
+  .topbar .brand{ display:flex; align-items:center; gap:12px; min-width:0; }
+  .topbar .logo{ height:30px; display:block; }
+  .topbar .ttl{ font-size:16px; font-weight:700; color:#16202B; white-space:nowrap; }
+  .topbar .spacer{ flex:1; }
+  .vlabel{ font-size:13.5px; font-weight:600; color:#6A7A89; }
+  .viewbar{ display:inline-flex; align-items:center; gap:5px; background:#E7EEF5; border:1px solid #DCE5EE; border-radius:9999px; padding:5px; }
+  .viewbar .seg{
+    display:inline-flex; align-items:center; gap:7px; font-family:inherit; font-size:13.5px; font-weight:700;
+    color:#6A7A89; background:transparent; border:1px solid transparent; border-radius:9999px;
+    padding:8px 16px; cursor:pointer; transition:.16s; white-space:nowrap; text-decoration:none;
+  }
+  .viewbar .seg.active{ background:#fff; color:#0090C4; border-color:#CDE8F6; box-shadow:0 2px 8px rgba(16,38,62,.12); }
+  .head{ text-align:center; margin-top:30px; }
+  .head h1{ margin:0; font-size:20px; font-weight:700; color:#16202B; letter-spacing:-.3px; }
+  .head p{ margin:6px 0 0; font-size:13px; color:#6A7A89; }
+  #root{ display:flex; justify-content:center; margin-top:22px; width:100%; }
+  .hint{ font-size:12px; color:#9AA8B6; text-align:center; line-height:1.6; margin-top:18px; }
+  @media (max-width:980px){ .head p{ padding:0 16px; } }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <img src="cpac-logo.png" alt="CPAC" class="logo" />
+      <span class="ttl">งานติดตามงานขาย</span>
+    </div>
+    <div class="spacer"></div>
+    <span class="vlabel">มุมมอง</span>
+    <div class="viewbar">
+      <a href="CPAC Mobile Preview.html" class="seg"><span>📱</span> CPAC staff</a>
+      <span class="seg active"><span>💻</span> บันทึกในคอม</span>
+      <a href="CPAC Admin Login.html" class="seg sup"><span>🖥</span> Supervisor</a>
+    </div>
+  </div>
+
+  <div class="head">
+    <h1>มุมมองคอมพิวเตอร์ · บันทึกงานขาย</h1>
+    <p>ฟอร์มบันทึกข้อมูลหน่วยงานสำหรับโน้ตบุ๊ก/PC จอกว้าง กรอกเร็ว</p>
+  </div>
+
+  <div id="root"></div>
+  <div class="hint">บัญชีทดสอบ: u / 1234 · nan / 1234 · taeng / 1234 · เปิดเหมือนเปิดในเบราว์เซอร์จริง</div>
+
+<script src="cpac-app.js"></script>
+<script>
+/* ตั้งเซสชันพนักงานตัวอย่าง เพื่อให้พรีวิวเข้าฟอร์มคอมได้ทันที */
+(function(){
+  CPAC.seed();
+  const s = CPAC.session();
+  if(!s || s.role !== 'staff'){
+    localStorage.setItem('cpac_session', JSON.stringify({ username:'u', name:'ทศพร (ยู)', role:'staff', team:'Metro 1' }));
+  }
+})();
+</script>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="browser-window.jsx"></script>
+<script type="text/babel">
+function DesktopPreview(){
+  const W = Math.min(1060, (typeof window!=='undefined'? window.innerWidth : 1060) - 40);
+  return (
+    <ChromeWindow
+      width={W} height={680}
+      url="cpac.app/บันทึกข้อมูล"
+      tabs={[{ title: 'CPAC · บันทึกงานขาย' }, { title: 'ใหม่' }]}
+      activeIndex={0}
+    >
+      <iframe
+        src="CPAC Desktop Form.html"
+        title="CPAC Notebook"
+        style={{ width:'100%', height:'100%', border:'none', display:'block', background:'#F4F7FB' }}
+      />
+    </ChromeWindow>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<DesktopPreview />);
+</script>
+</body>
+</html>

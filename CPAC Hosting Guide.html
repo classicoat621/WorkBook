@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>วิธีนำระบบขึ้นเว็บ — CPAC</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+<style>
+:root{
+  --cpac-blue:#00AEE0; --cpac-blue-bright:#00BBF2; --cpac-blue-dark:#0090C4;
+  --cpac-blue-soft:#E4F6FD; --cpac-blue-line:#BCE7F8;
+  --ink:#16202B; --muted:#6A7A89; --faint:#9AA8B6;
+  --line:#E3E9F0; --bg:#EEF3F8; --card:#FFFFFF;
+  --win:#15924C; --warn:#D9870B; --warn-soft:#FEF4E5;
+  --radius:14px; --shadow:0 1px 2px rgba(16,38,62,.05),0 10px 30px rgba(16,38,62,.07);
+}
+*{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; }
+body{
+  font-family:"IBM Plex Sans Thai",system-ui,-apple-system,sans-serif;
+  background:var(--bg); color:var(--ink); font-size:16px; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+.page{ max-width:720px; margin:0 auto; padding:0 0 60px; }
+
+/* ===== Header ===== */
+.head{
+  background:linear-gradient(135deg,#00BBF2 0%,#00A6DC 55%,#008FC6 100%); color:#fff;
+  padding:30px 30px 34px; border-radius:0 0 24px 24px; box-shadow:0 8px 26px rgba(0,150,210,.26);
+}
+.head .logo{ height:42px; padding:6px 11px; background:#fff; border-radius:10px; display:inline-flex; align-items:center; box-shadow:0 3px 10px rgba(0,0,0,.14); }
+.head .logo img{ height:26px; width:auto; display:block; }
+.head h1{ margin:18px 0 0; font-size:24px; font-weight:700; letter-spacing:-.3px; }
+.head p{ margin:6px 0 0; font-size:14.5px; opacity:.9; }
+
+/* ===== Intro ===== */
+.intro{ padding:24px 30px 6px; }
+.intro .lead{ font-size:15.5px; color:var(--muted); }
+
+/* ===== Download CTA ===== */
+.dl{
+  margin:18px 30px 8px; background:var(--card); border:1px solid var(--cpac-blue-line); border-radius:var(--radius);
+  padding:18px 20px; display:flex; align-items:center; gap:16px; box-shadow:var(--shadow);
+}
+.dl .ic{ width:46px; height:46px; flex:none; border-radius:11px; background:var(--cpac-blue-soft); color:var(--cpac-blue-dark); display:flex; align-items:center; justify-content:center; font-size:22px; }
+.dl .tx{ flex:1; }
+.dl .tx .t{ font-size:15px; font-weight:700; }
+.dl .tx .s{ font-size:12.5px; color:var(--muted); margin-top:2px; }
+.dl .note{ font-size:12px; color:var(--cpac-blue-dark); font-weight:600; }
+
+/* ===== Steps ===== */
+.steps{ padding:16px 30px 0; }
+.section-title{ font-size:13px; font-weight:700; color:var(--cpac-blue-dark); letter-spacing:.5px; text-transform:uppercase; margin:24px 4px 4px; }
+.step{
+  background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:0 1px 2px rgba(16,38,62,.04);
+  padding:20px 22px; margin-top:14px; position:relative; display:flex; gap:16px;
+}
+.step .n{
+  width:34px; height:34px; flex:none; border-radius:10px; background:linear-gradient(135deg,#00AEE0,#0090C4); color:#fff;
+  font-size:16px; font-weight:700; display:flex; align-items:center; justify-content:center; box-shadow:0 3px 8px rgba(0,150,210,.28);
+}
+.step .body{ flex:1; min-width:0; }
+.step h3{ margin:4px 0 6px; font-size:16.5px; font-weight:700; }
+.step p{ margin:0 0 8px; font-size:14.5px; color:#33414E; }
+.step p:last-child{ margin-bottom:0; }
+.step .link{ color:var(--cpac-blue-dark); font-weight:700; text-decoration:none; border-bottom:2px solid var(--cpac-blue-line); }
+.step .link:hover{ border-color:var(--cpac-blue); }
+.kbd{ background:var(--bg); border:1px solid var(--line); border-radius:6px; padding:1px 7px; font-size:13px; font-weight:600; }
+.pill{ display:inline-block; background:var(--cpac-blue-soft); color:var(--cpac-blue-dark); font-size:12.5px; font-weight:600; padding:2px 9px; border-radius:20px; }
+
+/* ===== Callout ===== */
+.callout{
+  margin:24px 30px 0; background:var(--warn-soft); border:1px solid #F6DDA8; border-radius:var(--radius);
+  padding:16px 18px; display:flex; gap:13px;
+}
+.callout .ic{ font-size:20px; line-height:1.3; flex:none; }
+.callout .tx{ font-size:14px; color:#7A5410; }
+.callout .tx b{ color:#5E3F08; }
+
+/* ===== File list ===== */
+.files{ margin-top:10px; display:flex; flex-wrap:wrap; gap:7px; }
+.files .f{ font-size:12.5px; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:5px 10px; font-weight:500; }
+.files .f.img{ color:var(--cpac-blue-dark); }
+
+/* ===== Result ===== */
+.result{
+  margin:26px 30px 0; background:linear-gradient(135deg,#ECF8F0,#E4F6FD); border:1px solid #BFE8CE; border-radius:var(--radius);
+  padding:20px 22px; text-align:center;
+}
+.result .big{ font-size:17px; font-weight:700; color:var(--win); }
+.result .url{ display:inline-block; margin-top:8px; background:#fff; border:1px solid var(--line); border-radius:8px; padding:7px 14px; font-size:14px; font-weight:600; color:var(--cpac-blue-dark); }
+.result .s{ font-size:13px; color:var(--muted); margin-top:10px; }
+
+.foot{ text-align:center; color:var(--muted); font-size:12px; margin-top:34px; }
+.foot .dot{ display:inline-block; width:4px; height:4px; border-radius:50%; background:var(--cpac-blue); margin:0 7px; vertical-align:middle; }
+</style>
+</head>
+
+<body>
+<div class="page">
+
+  <header class="head">
+    <div class="logo"><img src="cpac-logo.png" alt="CPAC" /></div>
+    <h1>วิธีนำระบบขึ้นเว็บ</h1>
+    <p>ให้ทีมเปิดผ่านลิงก์ในมือถือ/โน้ตบุ๊กได้ — ฟรี ไม่ต้องเขียนโค้ด · ใช้เวลา ~5 นาที</p>
+  </header>
+
+  <div class="intro">
+    <p class="lead">ตอนนี้ไฟล์ระบบอยู่ในเครื่องคุณ ต้องนำ "ขึ้นเว็บ" (host) ก่อน คนอื่นถึงเปิดผ่านลิงก์ได้ วิธีที่ง่ายที่สุดคือ <b>Netlify Drop</b> — แค่ลากไฟล์ไปวาง ก็ได้ลิงก์ทันที</p>
+  </div>
+
+  <!-- ดาวน์โหลดไฟล์ -->
+  <div class="dl">
+    <div class="ic">📦</div>
+    <div class="tx">
+      <div class="t">ขั้นเตรียม: ดาวน์โหลดไฟล์ระบบทั้งหมด</div>
+      <div class="s">กดปุ่มดาวน์โหลดในแชท แล้วแตกไฟล์ zip — จะได้โฟลเดอร์ที่มีไฟล์ครบ</div>
+    </div>
+    <div class="note">ทำก่อนเริ่ม</div>
+  </div>
+
+  <!-- ขั้นตอน -->
+  <div class="steps">
+    <div class="section-title">วิธีที่แนะนำ · Netlify Drop (ฟรี ไม่ต้องสมัคร)</div>
+
+    <div class="step">
+      <div class="n">1</div>
+      <div class="body">
+        <h3>เปิดเว็บ Netlify Drop</h3>
+        <p>เปิดเบราว์เซอร์บนโน้ตบุ๊ก แล้วไปที่ <a class="link" href="https://app.netlify.com/drop" target="_blank" rel="noopener">app.netlify.com/drop</a></p>
+        <p>จะเจอกล่องสี่เหลี่ยมใหญ่เขียนว่า "Drag and drop your site folder here"</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="n">2</div>
+      <div class="body">
+        <h3>ลากโฟลเดอร์ไฟล์ไปวาง</h3>
+        <p>เปิดโฟลเดอร์ที่แตก zip ไว้ → <b>เลือกไฟล์ทั้งหมด</b> (กด <span class="kbd">Ctrl+A</span> / Mac: <span class="kbd">Cmd+A</span>) → ลากไปวางในกล่องบนเว็บ Netlify</p>
+        <p>ต้องมีไฟล์เหล่านี้ครบ:</p>
+        <div class="files">
+          <span class="f">CPAC Home.html</span>
+          <span class="f">CPAC Sales Form.html</span>
+          <span class="f">CPAC Desktop Form.html</span>
+          <span class="f">CPAC Admin Dashboard.html</span>
+          <span class="f img">cpac-logo.png</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="n">3</div>
+      <div class="body">
+        <h3>รอสักครู่ — ได้ลิงก์ทันที</h3>
+        <p>Netlify จะอัปโหลดให้เอง ~10–30 วินาที เสร็จแล้วจะได้ลิงก์ เช่น <span class="pill">random-name-123.netlify.app</span></p>
+        <p>เปิดลิงก์ตามด้วย <span class="kbd">/CPAC%20Home.html</span> เพื่อเข้าหน้าแรก หรือตั้งหน้าแรกในขั้นถัดไป</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="n">4</div>
+      <div class="body">
+        <h3>(แนะนำ) เปลี่ยนชื่อลิงก์ให้จำง่าย</h3>
+        <p>สมัครบัญชี Netlify ฟรี → เข้า <b>Site settings → Change site name</b> → ตั้งเป็น เช่น <span class="pill">cpac-sales</span> จะได้ลิงก์ <b>cpac-sales.netlify.app</b></p>
+        <p>เปลี่ยนชื่อไฟล์หน้าแรกจาก "CPAC Home.html" เป็น <span class="kbd">index.html</span> ก่อนอัปโหลด เพื่อให้เปิดลิงก์เปล่าๆ เข้าหน้าแรกได้เลย (ไม่ต้องพิมพ์ต่อท้าย)</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="n">5</div>
+      <div class="body">
+        <h3>ส่งลิงก์ให้ทีม</h3>
+        <p>ส่งลิงก์ผ่าน Line ให้ Sales เปิดได้เลยทั้งมือถือและโน้ตบุ๊ก — กดเข้าหน้าแรก แล้วเลือก "บันทึกข้อมูล" หรือ "ดู Dashboard" ได้ทันที</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ข้อควรรู้ -->
+  <div class="callout">
+    <div class="ic">⚠️</div>
+    <div class="tx">
+      <b>ข้อควรรู้เรื่องข้อมูล:</b> ตอนนี้ข้อมูลที่กรอกถูกเก็บไว้ <b>ในเครื่องของแต่ละคนแยกกัน</b> (เหมาะกับทดลองใช้/สาธิต) — ยังไม่ใช่ฐานข้อมูลกลาง ถ้าต้องการให้ทุกคนเห็นข้อมูลร่วมกันจริง ต้องต่อ <b>Airtable</b> เพิ่ม บอกผมได้เลยถ้าพร้อมทำขั้นนี้
+    </div>
+  </div>
+
+  <!-- ผลลัพธ์ -->
+  <div class="result">
+    <div class="big">🎉 เสร็จแล้ว! ทีมเปิดใช้งานผ่านลิงก์ได้เลย</div>
+    <div class="url">https://cpac-sales.netlify.app</div>
+    <div class="s">เปิดได้ทั้งมือถือและโน้ตบุ๊ก · แก้ไขแล้วลากไฟล์ไปวางใหม่เพื่ออัปเดต</div>
+  </div>
+
+  <div class="foot">
+    CPAC <span class="dot"></span> คู่มือนำระบบขึ้นเว็บ <span class="dot"></span> v1.0
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>หน้าหลักพนักงานขาย — CPAC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="cpac-base.css" />
+<style>
+/* ---------- Top bar ---------- */
+.topbar{
+  background:#fff; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:20;
+}
+.topbar-in{ max-width:980px; margin:0 auto; display:flex; align-items:center; gap:14px; padding:13px 20px; }
+.tb-logo{ height:38px; padding:5px 11px; background:#fff; border:1px solid var(--line); border-radius:10px; display:flex; align-items:center; }
+.tb-back{ display:flex; align-items:center; justify-content:center; width:38px; height:38px; flex:none; font-size:22px; font-weight:700; color:var(--cpac-blue-dark); text-decoration:none; background:var(--bg); border:1px solid var(--line); border-radius:10px; transition:.15s; }
+.tb-back:hover{ background:#fff; border-color:var(--cpac-blue-line); }
+.tb-logo img{ height:22px; }
+.tb-title{ font-weight:700; font-size:15px; }
+.tb-title .sub{ font-size:11.5px; color:var(--muted); font-weight:500; }
+.tb-spacer{ flex:1; }
+.tb-user{ display:flex; align-items:center; gap:10px; min-width:0; }
+.tb-user .avatar{ width:36px; height:36px; font-size:13px; flex:none; }
+.tb-user .who{ min-width:0; }
+.tb-user .nm{ font-size:13.5px; font-weight:600; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:130px; }
+.tb-user .rl{ font-size:11.5px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:130px; }
+.logout{ flex:none; white-space:nowrap; font-family:inherit; font-size:12.5px; font-weight:600; color:var(--muted); background:var(--bg); border:1px solid var(--line); border-radius:9px; padding:8px 12px; cursor:pointer; transition:.15s; }
+.logout .lo-full{ display:inline; }
+.logout .lo-ic{ display:none; }
+.logout:hover{ background:#fff; border-color:var(--loss); color:var(--loss); }
+
+.page{ max-width:980px; margin:0 auto; padding:24px 20px 56px; }
+
+/* ---------- greeting ---------- */
+.hello{ display:flex; align-items:flex-end; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:18px; }
+.hello h1{ margin:0; font-size:24px; font-weight:700; letter-spacing:-.3px; }
+.hello p{ margin:5px 0 0; font-size:14px; color:var(--muted); }
+.hello .date{ font-size:13px; color:var(--muted); background:#fff; border:1px solid var(--line); border-radius:10px; padding:9px 14px; font-weight:500; }
+
+/* ---------- mini dashboard ---------- */
+.stat-row{ display:grid; grid-template-columns:repeat(5,1fr); gap:14px; }
+.stat{
+  background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);
+  padding:16px 16px 15px;
+}
+.stat .top{ display:flex; align-items:center; justify-content:space-between; }
+.stat .lab{ font-size:12.5px; color:var(--muted); font-weight:500; }
+.stat .ic{ width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:16px; }
+.stat .v{ font-size:27px; font-weight:700; margin-top:10px; letter-spacing:-.5px; }
+.stat .v small{ font-size:13px; font-weight:500; color:var(--muted); }
+.stat .sub{ font-size:11.5px; color:var(--muted); margin-top:3px; }
+
+/* ---------- win rate panel ---------- */
+.winrate{
+  background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);
+  padding:18px 20px; margin-top:14px; display:flex; align-items:center; gap:24px;
+}
+.winrate .donut{ width:104px; height:104px; flex:none; position:relative; }
+.winrate .donut .center{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+.winrate .donut .center .big{ font-size:22px; font-weight:700; line-height:1; }
+.winrate .donut .center .cap{ font-size:10.5px; color:var(--muted); margin-top:2px; }
+.winrate .legend{ flex:1; display:flex; flex-direction:column; gap:11px; min-width:0; }
+.winrate .lg{ display:flex; align-items:center; gap:10px; }
+.winrate .lg .sw{ width:11px; height:11px; border-radius:3px; flex:none; }
+.winrate .lg .nm{ font-size:13.5px; font-weight:500; flex:1; }
+.winrate .lg .pc{ font-size:13.5px; font-weight:700; }
+.winrate .lg .ct{ font-size:12px; color:var(--muted); min-width:54px; text-align:right; }
+
+/* ---------- monthly stacked chart ---------- */
+.monthly{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px 20px 20px; margin-top:14px; }
+.m-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+.m-head h3{ margin:0; font-size:15px; font-weight:700; }
+.m-head .m-sub{ font-size:12px; color:var(--muted); margin-top:3px; }
+.m-legend{ display:flex; gap:14px; font-size:12px; color:var(--muted); }
+.m-legend i{ display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:5px; vertical-align:middle; }
+/* ---------- Win Rate รายเดือน (แท่งแนวนอน) ---------- */
+.hbars{ display:flex; flex-direction:column; gap:10px; margin-top:16px; }
+.hbar-row{ display:flex; align-items:center; gap:11px; }
+.hbar-row .hm{ width:34px; flex:none; font-size:11.5px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.3px; }
+.hbar-row .htrack{ flex:1; height:18px; background:var(--bg); border-radius:9px; overflow:hidden; }
+.hbar-row .hfill{ height:100%; border-radius:9px; background:linear-gradient(90deg,var(--win),#23C589); box-shadow:0 1px 3px rgba(19,166,107,.28); }
+.hbar-row .hval{ width:50px; flex:none; text-align:right; font-size:12px; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; }
+.hbar-row.zero .hval{ color:var(--faint); font-weight:500; }
+.m-chart-wrap{ margin-top:16px; }
+.m-chart{ width:100%; height:220px; display:block; }
+.m-empty{ width:100%; text-align:center; color:var(--faint); font-size:13px; padding:60px 0; }
+.m-col:hover .mv{ opacity:1; }
+.m-empty{ width:100%; text-align:center; color:var(--faint); font-size:13px; align-self:center; }
+
+/* ---------- section title ---------- */
+.sec-title{ font-size:13px; font-weight:700; color:var(--muted); letter-spacing:.4px; text-transform:uppercase; margin:28px 4px 13px; }
+
+/* ---------- action cards ---------- */
+.actions{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+.action{
+  display:flex; flex-direction:column; gap:0; text-decoration:none; color:var(--ink);
+  background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);
+  padding:20px 18px; transition:transform .13s, box-shadow .16s, border-color .16s;
+}
+.action:hover{ transform:translateY(-3px); box-shadow:0 14px 34px rgba(16,38,62,.12); border-color:var(--cpac-blue-line); }
+.action .ic{ width:50px; height:50px; border-radius:13px; display:flex; align-items:center; justify-content:center; font-size:24px; margin-bottom:14px; }
+.action.a1 .ic{ background:linear-gradient(135deg,#00BBF2,#0090C4); color:#fff; }
+.action.a2 .ic{ background:var(--cpac-blue-soft); color:var(--cpac-blue-dark); }
+.action.a3 .ic{ background:#EAF1F8; color:#13476E; }
+.action .t{ font-size:16px; font-weight:700; }
+.action .s{ font-size:12.5px; color:var(--muted); margin-top:4px; line-height:1.45; }
+.action .go{ margin-top:14px; font-size:13px; font-weight:700; color:var(--cpac-blue-dark); }
+
+/* ---------- recent ---------- */
+.recent-card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
+.recent-head{ display:flex; align-items:center; justify-content:space-between; padding:15px 18px; border-bottom:1px solid var(--line); }
+.recent-head h3{ margin:0; font-size:15px; font-weight:700; }
+.recent-head a{ font-size:13px; font-weight:600; color:var(--cpac-blue-dark); text-decoration:none; }
+.r-item{ display:flex; align-items:center; gap:13px; padding:13px 18px; border-bottom:1px solid var(--line); text-decoration:none; color:var(--ink); transition:.13s; }
+.r-item:last-child{ border-bottom:none; }
+.r-item:hover{ background:var(--cpac-blue-soft); }
+.r-item .info{ flex:1; min-width:0; }
+.r-item .nm{ font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.r-item .meta{ font-size:12px; color:var(--muted); margin-top:2px; }
+.r-item .vol{ font-size:13px; font-weight:600; text-align:right; white-space:nowrap; }
+.r-item .vol small{ font-size:11px; color:var(--muted); font-weight:500; }
+.r-item .arrow{ color:var(--faint); font-size:18px; flex:none; }
+.empty{ padding:34px 18px; text-align:center; color:var(--muted); font-size:14px; }
+.empty a{ color:var(--cpac-blue-dark); font-weight:700; text-decoration:none; }
+
+@media (max-width:760px){
+  .stat-row{ grid-template-columns:repeat(2,1fr); }
+  .actions{ grid-template-columns:1fr; }
+  .tb-title{ display:none; }
+  .topbar-in{ gap:9px; padding:11px 14px; }
+  .tb-user{ gap:8px; }
+  .tb-user .nm{ max-width:88px; }
+  .tb-user .rl{ max-width:88px; }
+  .logout{ padding:9px 11px; font-size:0; }
+  .logout .lo-full{ display:none; }
+  .logout .lo-ic{ display:inline; font-size:16px; line-height:1; }
+}
+</style>
+</head>
+<body>
+<!-- ===== Top bar ===== -->
+<div class="topbar">
+  <div class="topbar-in">
+    <a href="CPAC Home.html" class="tb-back" title="ย้อนกลับ">‹</a>
+    <div class="tb-logo"><img src="cpac-logo.png" alt="CPAC" /></div>
+    <div class="tb-title">CPAC <span class="sub">· พนักงานขาย</span></div>
+    <div class="tb-spacer"></div>
+    <div class="tb-user">
+      <div class="avatar" id="avatar">--</div>
+      <div class="who">
+        <div class="nm" id="userName">—</div>
+        <div class="rl" id="userTeam">—</div>
+      </div>
+      <button class="logout" id="logout"><span class="lo-full">⮌ ออกจากระบบ</span><span class="lo-ic">⮌</span></button>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+  <!-- greeting -->
+  <div class="hello">
+    <div>
+      <h1 id="greet">สวัสดี 👋</h1>
+      <p>ภาพรวมงานขายของคุณ และเมนูสำหรับบันทึกข้อมูล</p>
+    </div>
+    <div class="date" id="today">—</div>
+  </div>
+
+  <!-- mini dashboard -->
+  <div class="stat-row">
+    <div class="stat">
+      <div class="top"><span class="lab">หน่วยงานของฉัน</span><span class="ic" style="background:var(--cpac-blue-soft);color:var(--cpac-blue-dark);">▤</span></div>
+      <div class="v" id="sTotal">0</div>
+      <div class="sub">ทั้งหมดที่บันทึก</div>
+    </div>
+    <div class="stat">
+      <div class="top"><span class="lab">Win</span><span class="ic" style="background:var(--win-soft);color:var(--win);">◎</span></div>
+      <div class="v" id="sWin" style="color:var(--win);">0</div>
+      <div class="sub" id="sWinRate">Win rate 0%</div>
+    </div>
+    <div class="stat">
+      <div class="top"><span class="lab">Follow</span><span class="ic" style="background:var(--follow-soft);color:var(--follow);">◔</span></div>
+      <div class="v" id="sFollow" style="color:var(--follow);">0</div>
+      <div class="sub">ต้องเร่งปิดงาน</div>
+    </div>
+    <div class="stat">
+      <div class="top"><span class="lab">Loss</span><span class="ic" style="background:var(--loss-soft);color:var(--loss);">○</span></div>
+      <div class="v" id="sLoss" style="color:var(--loss);">0</div>
+      <div class="sub">งาน Loss</div>
+    </div>
+    <div class="stat">
+      <div class="top"><span class="lab">ปริมาณรวม</span><span class="ic" style="background:var(--cpac-blue-soft);color:var(--cpac-blue);">▥</span></div>
+      <div class="v"><span id="sVol">0</span> <small>ลบ.ม.</small></div>
+      <div class="sub">คอนกรีตทั้งหมด</div>
+    </div>
+  </div>
+
+  <!-- win rate donut -->
+  <div class="winrate">
+    <div class="donut">
+      <svg viewBox="0 0 36 36" width="104" height="104">
+        <circle cx="18" cy="18" r="15.9155" fill="none" stroke="var(--line)" stroke-width="3.8"></circle>
+        <circle id="dWin" cx="18" cy="18" r="15.9155" fill="none" stroke="var(--win)" stroke-width="3.8" stroke-dasharray="0 100" stroke-dashoffset="25" stroke-linecap="round"></circle>
+        <circle id="dFollow" cx="18" cy="18" r="15.9155" fill="none" stroke="var(--follow)" stroke-width="3.8" stroke-dasharray="0 100" stroke-dashoffset="25" stroke-linecap="round"></circle>
+        <circle id="dLoss" cx="18" cy="18" r="15.9155" fill="none" stroke="var(--loss)" stroke-width="3.8" stroke-dasharray="0 100" stroke-dashoffset="25" stroke-linecap="round"></circle>
+      </svg>
+      <div class="center"><div class="big" id="dCenter">0%</div><div class="cap">Win rate</div></div>
+    </div>
+    <div class="legend" id="legend"></div>
+  </div>
+
+  <!-- monthly stacked bar (Win/Loss/Follow) -->
+  <div class="monthly">
+    <div class="m-head">
+      <div>
+        <h3>ปริมาณงานรายเดือน</h3>
+        <div class="m-sub">ปริมาณทั้งโครงการ (ลบ.ม.) · Win=วันที่คาดว่าจะเท · Loss/Follow=วันที่ทราบข้อมูล</div>
+      </div>
+      <div class="m-legend">
+        <span><i style="background:var(--win)"></i>Win</span>
+        <span><i style="background:var(--follow)"></i>Follow</span>
+        <span><i style="background:var(--loss)"></i>Loss</span>
+      </div>
+    </div>
+    <div class="m-chart-wrap">
+      <svg class="m-chart" id="mChart" preserveAspectRatio="none"></svg>
+    </div>
+  </div>
+
+  <!-- Win Rate รายเดือน (แท่งแนวนอน) -->
+  <div class="monthly">
+    <div class="m-head">
+      <div>
+        <h3>Win Rate รายเดือน</h3>
+        <div class="m-sub">Win ÷ (Win+Loss) · อัตราชนะจากงานที่ปิดแล้วในแต่ละเดือน</div>
+      </div>
+      <div class="m-legend">
+        <span><i style="background:var(--win)"></i>Win</span>
+      </div>
+    </div>
+    <div class="hbars" id="winRateChart"></div>
+  </div>
+
+  <!-- quick actions -->
+  <div class="sec-title">บันทึก & จัดการงาน</div>
+  <div class="actions">
+    <a href="CPAC Sales Form.html" class="action a1">
+      <span class="ic">📱</span>
+      <span class="t">บันทึกข้อมูล (มือถือ)</span>
+      <span class="s">กรอกผ่านมือถือ ถ่ายรูป แนบ GPS</span>
+      <span class="go">เริ่มกรอก ›</span>
+    </a>
+    <a href="CPAC Desktop Form.html" class="action a2">
+      <span class="ic">💻</span>
+      <span class="t">บันทึกข้อมูล (คอม)</span>
+      <span class="s">กรอกผ่านโน้ตบุ๊ก/PC จอกว้าง กรอกเร็ว</span>
+      <span class="go">เริ่มกรอก ›</span>
+    </a>
+    <a href="CPAC My Sites.html" class="action a3">
+      <span class="ic">👤</span>
+      <span class="t">งานของฉัน</span>
+      <span class="s">ดู ค้นหา และแก้ไขหน่วยงานที่บันทึกไว้</span>
+      <span class="go">เปิดรายการ ›</span>
+    </a>
+  </div>
+
+  <!-- recent -->
+  <div class="sec-title">บันทึกล่าสุด</div>
+  <div class="recent-card">
+    <div class="recent-head">
+      <h3>หน่วยงานล่าสุด</h3>
+      <a href="CPAC My Sites.html">ดูทั้งหมด ›</a>
+    </div>
+    <div id="recent"></div>
+  </div>
+</div>
+
+<script src="cpac-app.js"></script>
+<script>
+const S = CPAC.requireRole('staff', 'CPAC Staff Login.html');
+if(S){
+  CPAC.seed();
+
+  /* user info */
+  document.getElementById('avatar').textContent = CPAC.initials(S.name);
+  document.getElementById('userName').textContent = S.name;
+  document.getElementById('userTeam').textContent = S.team + ' · พนักงานขาย';
+  document.getElementById('greet').textContent = 'สวัสดี, ' + S.name.split(' ')[0] + ' 👋';
+  const now = new Date();
+  document.getElementById('today').textContent = '📅 ' + now.getDate() + ' ' + CPAC.TH_MONTHS[now.getMonth()] + ' ' + (now.getFullYear()+543);
+
+  document.getElementById('logout').addEventListener('click', ()=>{
+    CPAC.logout(); location.replace('CPAC Staff Login.html');
+  });
+
+  /* my entries */
+  const mine = CPAC.myEntries(S.username);
+  const total = mine.length;
+  const win = mine.filter(d=>d.status==='Win').length;
+  const loss = mine.filter(d=>d.status==='Loss').length;
+  const follow = mine.filter(d=>d.status==='Follow').length;
+  const vol = mine.reduce((s,d)=>s+(d.projectVol||0),0);
+  /* สัดส่วนสถานะ — คิดจากปริมาณคอนกรีตทั้งโครงการ */
+  const winV = mine.filter(d=>d.status==='Win').reduce((s,d)=>s+(d.projectVol||0),0);
+  const lossV = mine.filter(d=>d.status==='Loss').reduce((s,d)=>s+(d.projectVol||0),0);
+  const followV = mine.filter(d=>d.status==='Follow').reduce((s,d)=>s+(d.projectVol||0),0);
+  const wr = (winV+lossV) ? Math.round(winV/(winV+lossV)*100) : 0;   /* Win ÷ (Win+Loss) ตามปริมาณ */
+
+  document.getElementById('sTotal').textContent = total;
+  document.getElementById('sWin').textContent = win;
+  document.getElementById('sWinRate').textContent = 'Win rate ' + wr + '%';
+  document.getElementById('sFollow').textContent = follow;
+  document.getElementById('sLoss').textContent = loss;
+  document.getElementById('sVol').textContent = CPAC.fmt(vol);
+
+  /* donut — Win vs Loss ตามปริมาณคอนกรีต (ตัด Follow ออก) */
+  const t = (winV+lossV) || 1;
+  const pw = winV/t*100, pl = lossV/t*100;
+  function setArc(id,pct,off){ const el=document.getElementById(id); el.setAttribute('stroke-dasharray', pct+' '+(100-pct)); el.setAttribute('stroke-dashoffset', off); }
+  setTimeout(()=>{ setArc('dWin',pw,25); setArc('dFollow',0,25-pw); setArc('dLoss',pl,25-pw); }, 100);
+  document.getElementById('dCenter').textContent = wr + '%';
+  document.getElementById('legend').innerHTML = [
+    ['Win', winV, pw, win, 'var(--win)'],
+    ['Loss', lossV, pl, loss, 'var(--loss)'],
+  ].map(([nm,v,pc,ct,c])=>`
+    <div class="lg"><span class="sw" style="background:${c}"></span>
+      <span class="nm">${nm}</span><span class="pc">${Math.round(pc)}%</span><span class="ct">${CPAC.fmt(v)} ลบ.ม. · ${ct} Site</span></div>`).join('');
+
+  /* ===== กราฟแท่งซ้อนปริมาณรายเดือน (Win/Loss/Follow) — วาดด้วย SVG ===== */
+  (function(){
+    const svg = document.getElementById('mChart');
+    const NS = 'http://www.w3.org/2000/svg';
+    /* รวมปริมาณทั้งโครงการ แยกตามสถานะ
+       👉 Win = วันที่คาดว่าจะเท · Loss/Follow = วันที่ทราบข้อมูล */
+    const byMonth = CPAC.MONTH_KEYS.map(()=>({ Win:0, Follow:0, Loss:0 }));
+    let any = false;
+    mine.forEach(d=>{
+      const mi = (d.status==='Win') ? CPAC.monthStart(d) : CPAC.monthKnown(d);
+      const v = Number(d.projectVol)||0;
+      if(mi>=0 && v>0 && byMonth[mi][d.status]!==undefined){ byMonth[mi][d.status]+=v; any=true; }
+    });
+    if(!any){
+      svg.parentElement.innerHTML = '<div class="m-empty">ยังไม่มีข้อมูลปริมาณ<br/>กรอกปริมาณคอนกรีตทั้งโครงการในฟอร์มเพื่อแสดงกราฟ</div>';
+      return;
+    }
+    const totals = byMonth.map(s=> s.Win+s.Follow+s.Loss);
+    const maxM = Math.max(...totals, 1);
+    const W=720, H=220, PADB=26, TOP=14;
+    const plotH = H - PADB - TOP;
+    const colW = W/12, barW = Math.min(30, colW*0.62);
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    const segColor = { Win:'var(--win)', Follow:'var(--follow)', Loss:'var(--loss)' };
+    let html = '';
+    CPAC.MONTH_KEYS.forEach((m,i)=>{
+      const s = byMonth[i];
+      const cx = i*colW + colW/2;
+      const x = cx - barW/2;
+      let yCursor = TOP + plotH;   /* ฐานล่าง */
+      const order = [['Win',s.Win],['Follow',s.Follow],['Loss',s.Loss]];   /* Win ล่างสุด */
+      const drawn = order.filter(o=>o[1]>0);
+      drawn.forEach(([k,v],j)=>{
+        const h = v/maxM*plotH;
+        yCursor -= h;
+        const rx = (j===drawn.length-1) ? 4 : 0;   /* แท่งบนสุดมนหัว */
+        html += `<rect x="${x.toFixed(1)}" y="${yCursor.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="${rx}" fill="${segColor[k]}"><title>${CPAC.TH_MONTHS[i]} — ${k}: ${CPAC.fmt(Math.round(v))} ลบ.ม.</title></rect>`;
+      });
+      /* ยอดรวมบนแท่ง */
+      if(totals[i]>0){
+        html += `<text x="${cx.toFixed(1)}" y="${(yCursor-6).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="700" fill="#0090C4">${CPAC.fmt(totals[i])}</text>`;
+      }
+      /* ป้ายเดือน */
+      html += `<text x="${cx.toFixed(1)}" y="${H-8}" text-anchor="middle" font-size="12" fill="#6A7A89">${CPAC.TH_MONTHS[i]}</text>`;
+    });
+    svg.innerHTML = html;
+  })();
+
+  /* ===== Win Rate รายเดือน (แท่งแนวนอน) = Win ÷ (Win+Loss) ของเดือนนั้น ===== */
+  (function(){
+    const el = document.getElementById('winRateChart');
+    if(!el) return;
+    const winM = CPAC.MONTH_KEYS.map(()=>0);
+    const lossM = CPAC.MONTH_KEYS.map(()=>0);
+    mine.forEach(d=>{
+      const v = Number(d.projectVol)||0; if(v<=0) return;
+      if(d.status==='Win'){ const mi=CPAC.monthStart(d); if(mi>=0) winM[mi]+=v; }
+      if(d.status==='Loss'){ const mi=CPAC.monthKnown(d); if(mi>=0) lossM[mi]+=v; }
+    });
+    el.innerHTML = CPAC.MONTH_KEYS.map((m,i)=>{
+      const den = winM[i]+lossM[i];
+      const r = den>0 ? winM[i]/den*100 : null;
+      const has = r!==null;
+      const w = has ? Math.max(3, r) : 0;
+      return `<div class="hbar-row${has?'':' zero'}">`
+        + `<span class="hm">${CPAC.TH_MONTHS[i]}</span>`
+        + `<div class="htrack">${has?`<div class="hfill" style="width:${w}%"></div>`:''}</div>`
+        + `<span class="hval">${has?r.toFixed(0)+'%':'–'}</span></div>`;
+    }).join('');
+  })();
+
+  /* recent 4 */
+  const recent = document.getElementById('recent');
+  if(mine.length){
+    recent.innerHTML = mine.slice(0,4).map(d=>`
+      <a class="r-item" href="CPAC Site Detail.html?id=${d.ts}">
+        <span class="badge ${d.status}"><span class="d"></span>${CPAC.STATUS_TH[d.status]||d.status}</span>
+        <div class="info">
+          <div class="nm">${d.site}</div>
+          <div class="meta">${d.metro} · ${d.cluster} · ${CPAC.dateTxt(d.ts)}</div>
+        </div>
+        <div class="vol">${CPAC.fmt(d.vol)} <small>ลบ.ม.</small></div>
+        <span class="arrow">›</span>
+      </a>`).join('');
+  } else {
+    recent.innerHTML = '<div class="empty">ยังไม่มีหน่วยงานที่บันทึก<br/><a href="CPAC Sales Form.html">+ เริ่มบันทึกหน่วยงานแรก</a></div>';
+  }
+}
+</script>
+</body>
+</html>

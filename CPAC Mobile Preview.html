@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>มุมมองมือถือ พนักงานขาย — CPAC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  html,body{ margin:0; padding:0; }
+  body{
+    min-height:100vh; display:flex; flex-direction:column; align-items:center;
+    padding:0 0 40px;
+    font-family:"IBM Plex Sans Thai",system-ui,sans-serif;
+    background:
+      radial-gradient(900px 500px at 15% -10%, #D9F2FC 0%, rgba(217,242,252,0) 60%),
+      radial-gradient(800px 600px at 110% 120%, #E2F5FB 0%, rgba(226,245,251,0) 55%),
+      #EEF4F9;
+  }
+  /* ===== แถบบนสุด ===== */
+  .topbar{
+    width:100%; box-sizing:border-box; display:flex; align-items:center; gap:16px;
+    padding:13px 26px; background:#fff; border-bottom:1px solid #E3E9F0;
+    box-shadow:0 1px 3px rgba(16,38,62,.04); position:sticky; top:0; z-index:30;
+  }
+  .topbar .brand{ display:flex; align-items:center; gap:12px; min-width:0; }
+  .topbar .logo{ height:30px; display:block; }
+  .topbar .ttl{ font-size:16px; font-weight:700; color:#16202B; white-space:nowrap; }
+  .topbar .sep{ width:1px; height:22px; background:#E3E9F0; }
+  .topbar .sub{ font-size:12.5px; color:#6A7A89; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .topbar .spacer{ flex:1; }
+  .vlabel{ font-size:13.5px; font-weight:600; color:#6A7A89; }
+  .viewbar{ display:inline-flex; align-items:center; gap:5px; background:#E7EEF5; border:1px solid #DCE5EE; border-radius:9999px; padding:5px; }
+  .viewbar .seg{
+    display:inline-flex; align-items:center; gap:7px; font-family:inherit; font-size:13.5px; font-weight:700;
+    color:#6A7A89; background:transparent; border:1px solid transparent; border-radius:9999px;
+    padding:8px 16px; cursor:pointer; transition:.16s; white-space:nowrap; text-decoration:none;
+  }
+  .viewbar .seg.active{ background:#fff; color:var(--cpac-blue-dark,#0090C4); border-color:#CDE8F6; box-shadow:0 2px 8px rgba(16,38,62,.12); }
+  .viewbar .seg.sup.active{ color:#13476E; border-color:#B9CADB; }
+
+  .head{ text-align:center; margin-top:30px; }
+  .head h1{ margin:0; font-size:20px; font-weight:700; color:#16202B; letter-spacing:-.3px; }
+  .head p{ margin:6px 0 0; font-size:13px; color:#6A7A89; }
+  .reset-btn{
+    margin-top:13px; font-family:inherit; font-size:13px; font-weight:700; color:var(--cpac-blue-dark,#0090C4);
+    background:#fff; border:1px solid #CDE8F6; border-radius:10px; padding:9px 16px; cursor:pointer;
+    box-shadow:0 3px 10px rgba(0,150,210,.12); transition:.15s; display:inline-flex; align-items:center; gap:7px;
+  }
+  .reset-btn:hover{ background:#F0FAFE; }
+  #root{ display:flex; justify-content:center; margin-top:20px; }
+  .hint{ font-size:12px; color:#9AA8B6; text-align:center; line-height:1.6; margin-top:18px; }
+  .hint b{ color:#6A7A89; }
+  @media (max-width:680px){ .topbar .sub, .topbar .sep{ display:none; } }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <img src="cpac-logo.png" alt="CPAC" class="logo" />
+      <span class="ttl">งานติดตามงานขาย</span>
+    </div>
+    <div class="spacer"></div>
+    <span class="vlabel">มุมมอง</span>
+    <div class="viewbar">
+      <span class="seg active"><span>📱</span> CPAC staff</span>
+      <a href="CPAC Desktop Preview.html" class="seg"><span>💻</span> บันทึกในคอม</a>
+      <a href="CPAC Admin Login.html" class="seg sup"><span>🖥</span> Supervisor</a>
+    </div>
+  </div>
+
+  <div class="head">
+    <h1>มุมมองมือถือ · พนักงานขาย</h1>
+    <p>ใช้งานจริงตั้งแต่หน้า Login ไปจนคีย์ข้อมูล</p>
+    <button type="button" class="reset-btn" id="resetBtn">↺ เริ่มจากหน้า Login</button>
+  </div>
+
+  <div id="root"></div>
+  <div class="hint"><b>บัญชีทดสอบ:</b> u / 1234 · nan / 1234 · taeng / 1234<br/>แตะช่องเพื่อกรอก • เลื่อนดูได้ • กรอบจำลอง iPhone</div>
+
+<script src="cpac-app.js"></script>
+<script>
+/* เริ่มมุมมองที่หน้า Login เสมอ — ออกจากระบบก่อน (เฉพาะหน้าพรีวิวนี้) */
+(function(){
+  CPAC.seed();
+  localStorage.setItem('cpac_session', '');   /* ค่าว่าง = ยังไม่ล็อกอิน -> โชว์หน้า Login */
+})();
+</script>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel">
+const { useState, useRef } = React;
+const START = 'CPAC Staff Login.html';
+
+function MobilePreview(){
+  const [nonce, setNonce] = useState(0);   /* บังคับโหลดใหม่เมื่อกด reset */
+
+  React.useEffect(()=>{
+    const btn = document.getElementById('resetBtn');
+    const handler = ()=>{
+      try{ localStorage.setItem('cpac_session', ''); }catch(e){}
+      setNonce(n=> n+1);
+    };
+    btn.addEventListener('click', handler);
+    return ()=> btn.removeEventListener('click', handler);
+  }, []);
+
+  return (
+    <IOSDevice width={402} height={848}>
+      <div style={{ height:'100%', display:'flex', flexDirection:'column', background:'#EFF5FA' }}>
+        {/* แถบบนใต้ Dynamic Island */}
+        <div style={{ height:50, flex:'none', background:'#EFF5FA' }} />
+        <iframe
+          key={nonce}
+          src={START}
+          title="CPAC Staff"
+          style={{ flex:1, width:'100%', border:'none', background:'#EFF5FA', display:'block' }}
+        />
+        {/* เว้นพื้นที่ให้พ้นแถบ home indicator ด้านล่าง */}
+        <div style={{ height:24, flex:'none', background:'#EFF5FA' }} />
+      </div>
+    </IOSDevice>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<MobilePreview />);
+</script>
+</body>
+</html>

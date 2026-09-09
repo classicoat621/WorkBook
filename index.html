@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CPAC — ระบบบันทึกงานขายคอนกรีต</title>
+<!-- เด้งเข้าหน้ามุมมองล่าสุดอัตโนมัติ -->
+<meta http-equiv="refresh" content="0; url=CPAC Mobile Preview.html" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;600;700&display=swap" rel="stylesheet" />
+<style>
+  html,body{ margin:0; padding:0; height:100%; }
+  body{
+    font-family:"IBM Plex Sans Thai",system-ui,sans-serif;
+    display:flex; align-items:center; justify-content:center; min-height:100vh;
+    background:
+      radial-gradient(900px 500px at 15% -10%, #D9F2FC 0%, rgba(217,242,252,0) 60%),
+      radial-gradient(800px 600px at 110% 120%, #E2F5FB 0%, rgba(226,245,251,0) 55%),
+      #EEF4F9;
+    color:#16202B; text-align:center;
+  }
+  .box{ display:flex; flex-direction:column; align-items:center; gap:18px; }
+  .logo{ height:42px; background:#fff; padding:9px 16px; border-radius:13px; box-shadow:0 8px 24px rgba(0,150,210,.18); }
+  .logo img{ height:30px; display:block; }
+  .spin{ width:34px; height:34px; border:3px solid #CDE8F6; border-top-color:#0090C4; border-radius:50%; animation:sp .8s linear infinite; }
+  @keyframes sp{ to{ transform:rotate(360deg); } }
+  p{ margin:0; font-size:14px; color:#6A7A89; }
+  a{ color:#0090C4; font-weight:700; text-decoration:none; }
+</style>
+</head>
+<body>
+  <div class="box">
+    <span class="logo"><img src="cpac-logo.png" alt="CPAC" /></span>
+    <div class="spin"></div>
+    <p>กำลังเข้าสู่ระบบ… <br/>ถ้าไม่เปลี่ยนหน้าอัตโนมัติ <a href="CPAC Mobile Preview.html">แตะที่นี่</a></p>
+  </div>
+  <script>location.replace('CPAC Mobile Preview.html');</script>
+</body>
+</html>

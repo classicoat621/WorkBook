@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>เข้าสู่ระบบพนักงานขาย — CPAC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="cpac-base.css" />
+<style>
+body{ min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:5vh 20px 24px;
+  background:
+    radial-gradient(1200px 600px at 18% -10%, #D9F2FC 0%, rgba(217,242,252,0) 60%),
+    radial-gradient(1000px 700px at 110% 120%, #DFF4FB 0%, rgba(223,244,251,0) 55%),
+    #EFF5FA;
+}
+.wrap{ width:100%; max-width:430px; }
+
+/* ---- การ์ดล็อกอิน ---- */
+.card{
+  background:var(--card); border:1px solid var(--line); border-radius:22px;
+  box-shadow:0 24px 60px rgba(16,38,62,.14); overflow:hidden;
+}
+.head{
+  background:linear-gradient(150deg,#00BBF2 0%,#00A6DC 52%,#0086BE 100%); color:#fff;
+  padding:30px 28px 30px; position:relative; overflow:hidden;
+}
+.head::after{
+  content:""; position:absolute; right:-24px; bottom:-28px; width:200px; height:130px;
+  background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 40' fill='none' stroke='white' stroke-width='1.3'><ellipse cx='38' cy='17' rx='20' ry='12'/><path d='M20 28 L18 16 L30 11 L50 10'/><rect x='4' y='15' width='14' height='13' rx='2'/><circle cx='15' cy='31' r='4'/><circle cx='46' cy='31' r='4'/></svg>") no-repeat center/contain;
+  opacity:.13; pointer-events:none;
+}
+.logo-badge{
+  display:inline-flex; align-items:center; justify-content:center; height:50px; padding:8px 14px;
+  background:#fff; border-radius:12px; box-shadow:0 4px 14px rgba(0,0,0,.16); position:relative; z-index:1;
+}
+.logo-badge img{ height:30px; width:auto; display:block; }
+.role-pill{
+  display:inline-flex; align-items:center; gap:7px; margin-top:18px; padding:5px 12px;
+  background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.3); border-radius:30px;
+  font-size:12.5px; font-weight:600; position:relative; z-index:1;
+}
+.head h1{ margin:11px 0 0; font-size:23px; font-weight:700; letter-spacing:-.3px; position:relative; z-index:1; }
+.head p{ margin:5px 0 0; font-size:13.5px; opacity:.9; position:relative; z-index:1; }
+
+/* ---- ฟอร์ม ---- */
+.body{ padding:26px 28px 28px; }
+.field{ margin-bottom:16px; }
+.field label{ display:block; font-size:13px; font-weight:600; color:var(--ink); margin-bottom:7px; }
+.input{
+  position:relative; display:flex; align-items:center;
+  border:1.5px solid var(--line); border-radius:12px; background:#fff; transition:.15s;
+}
+.input:focus-within{ border-color:var(--cpac-blue); box-shadow:0 0 0 3px rgba(0,150,210,.12); }
+.input .ic{ width:44px; text-align:center; color:var(--faint); font-size:16px; flex:none; }
+.input input{
+  flex:1; min-width:0; border:none; outline:none; background:transparent; font-family:inherit;
+  font-size:15px; color:var(--ink); padding:13px 14px 13px 0;
+}
+.input .toggle{
+  border:none; background:none; cursor:pointer; color:var(--muted); font-size:13px; font-weight:600;
+  padding:0 14px; flex:none; font-family:inherit;
+}
+.err{
+  display:none; align-items:center; gap:7px; background:var(--loss-soft); color:var(--loss);
+  border:1px solid #F6CFCB; border-radius:10px; padding:10px 13px; font-size:13px; font-weight:600; margin-bottom:16px;
+}
+.err.show{ display:flex; }
+.btn-login{ width:100%; padding:15px; font-size:16px; }
+.row-between{ display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+.remember{ display:flex; align-items:center; gap:8px; font-size:13px; color:var(--muted); font-weight:500; cursor:pointer; }
+.remember input{ width:16px; height:16px; accent-color:var(--cpac-blue); }
+.forgot{ font-size:13px; color:var(--cpac-blue-dark); font-weight:600; text-decoration:none; }
+
+/* ---- demo hint ---- */
+.demo{
+  margin-top:18px; background:var(--cpac-blue-soft); border:1px dashed var(--cpac-blue-line);
+  border-radius:12px; padding:12px 14px; font-size:12.5px; color:var(--cpac-blue-dark);
+}
+.demo b{ font-weight:700; }
+.demo .accts{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.demo .acct{
+  background:#fff; border:1px solid var(--cpac-blue-line); border-radius:9px; padding:6px 11px;
+  font-size:12px; font-weight:600; color:var(--ink); cursor:pointer; transition:.15s;
+}
+.demo .acct:hover{ background:var(--cpac-blue); color:#fff; border-color:var(--cpac-blue); }
+.demo .acct .u{ font-weight:700; }
+.demo .acct .p{ opacity:.7; font-weight:500; }
+
+.foot-link{ text-align:center; margin-top:20px; font-size:13px; color:var(--muted); }
+.foot-link a{ color:var(--cpac-blue-dark); font-weight:600; text-decoration:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="head">
+      <div class="logo-badge"><img src="cpac-logo.png" alt="CPAC" /></div>
+      <div class="role-pill">👷 สำหรับพนักงานขาย (Staff)</div>
+      <h1>เข้าสู่ระบบ</h1>
+      <p>บันทึกงานขายคอนกรีต และติดตามหน่วยงานของคุณ</p>
+    </div>
+
+    <div class="body">
+      <div class="err" id="err"><span>⚠</span> <span id="errMsg">ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง</span></div>
+
+      <form id="loginForm" autocomplete="off">
+        <div class="field">
+          <label>ชื่อผู้ใช้</label>
+          <div class="input">
+            <span class="ic">👤</span>
+            <input type="text" id="username" placeholder="พิมพ์ชื่อผู้ใช้ของคุณ" autocapitalize="none" required />
+          </div>
+        </div>
+        <div class="row-between">
+          <label class="remember"><input type="checkbox" id="remember" checked /> จดจำการเข้าสู่ระบบ</label>
+        </div>
+        <button type="submit" class="btn btn-primary btn-login">เข้าสู่ระบบ</button>
+      </form>
+
+      <div class="foot-link">เป็นผู้ดูแลระบบ? <a href="CPAC Admin Login.html">เข้าสู่ระบบ Admin</a></div>
+    </div>
+  </div>
+</div>
+
+<script src="cpac-app.js"></script>
+<script>
+/* ถ้าล็อกอินเป็น staff อยู่แล้ว -> เข้าพอร์ทัลเลย */
+(function(){
+  const s = CPAC.session();
+  if(s && s.role === 'staff'){ location.replace('CPAC Staff Portal.html'); }
+})();
+
+const err = document.getElementById('err');
+const errMsg = document.getElementById('errMsg');
+
+/* (ลบปุ่มบัญชีทดสอบออกแล้ว) */
+
+document.getElementById('loginForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  const u = document.getElementById('username').value;
+  const sess = CPAC.loginByUsername(u);
+  if(!sess){ err.classList.add('show'); return; }
+  if(sess.role !== 'staff'){
+    errMsg.textContent = 'บัญชีนี้เป็นผู้ดูแลระบบ — กรุณาเข้าทางหน้า Admin';
+    err.classList.add('show');
+    CPAC.logout();
+    return;
+  }
+  err.classList.remove('show');
+  location.href = 'CPAC Staff Portal.html';
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1584 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<title>Dashboard — CPAC ระบบงานขายคอนกรีต</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+<style>
+/* ============================================================
+   🎨  สีหลัก (ชุดเดียวกับฟอร์ม)
+   ============================================================ */
+:root{
+  --cpac-blue:#00AEE0; --cpac-blue-bright:#00BBF2; --cpac-blue-dark:#0090C4;
+  --cpac-blue-soft:#E4F6FD; --cpac-blue-line:#BCE7F8;
+  --ink:#16202B; --muted:#6A7A89; --faint:#9AA8B6;
+  --line:#E3E9F0; --bg:#F4F7FB; --card:#FFFFFF;
+  --win:#13A66B; --loss:#E24B57; --follow:#EFA838;
+  --win-soft:#E7F7F0; --loss-soft:#FDECEE; --follow-soft:#FEF4E3;
+  --chart-blue-1:#28BDEC; --chart-blue-2:#0E9AD0; --chart-blue-3:#0883BC;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(16,38,62,.05),0 8px 24px rgba(16,38,62,.06);
+}
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ margin:0; padding:0; }
+body{
+  font-family:"IBM Plex Sans Thai",system-ui,-apple-system,sans-serif;
+  background:var(--bg); color:var(--ink); font-size:15px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ============================================================
+   Layout
+   ============================================================ */
+.layout{ display:flex; min-height:100vh; }
+
+/* ----- Sidebar ----- */
+.sidebar{
+  width:230px; flex:none; background:#0A2A4A; color:#fff;
+  display:flex; flex-direction:column; padding:20px 14px;
+  position:sticky; top:0; height:100vh;
+}
+.sb-brand{ display:flex; align-items:center; gap:10px; padding:4px 8px 22px; }
+.sb-brand .logo{
+  flex:none; padding:5px 8px; border-radius:9px; background:#fff;
+  display:flex; align-items:center; justify-content:center;
+}
+.sb-brand .logo img{ height:20px; width:auto; display:block; }
+.sb-brand .name{ font-weight:700; font-size:14px; letter-spacing:.4px; }
+.sb-brand .sub{ font-size:11px; opacity:.6; margin-top:1px; }
+.sb-nav{ display:flex; flex-direction:column; gap:3px; }
+.sb-nav a{
+  display:flex; align-items:center; gap:11px; padding:11px 13px; border-radius:10px;
+  color:#C5D4E3; text-decoration:none; font-size:14px; font-weight:500; transition:.15s;
+}
+.sb-nav a .ic{ width:18px; text-align:center; font-size:16px; }
+.sb-nav a:hover{ background:rgba(255,255,255,.06); color:#fff; }
+.sb-nav a.active{ background:var(--cpac-blue); color:#fff; }
+.sb-foot{ margin-top:auto; padding:14px 12px 4px; border-top:1px solid rgba(255,255,255,.1); }
+.sb-foot .u{ display:flex; align-items:center; gap:10px; }
+.sb-foot .av{
+  width:34px; height:34px; border-radius:50%; background:var(--cpac-blue);
+  display:flex; align-items:center; justify-content:center; font-weight:600; font-size:13px;
+}
+.sb-foot .un{ font-size:13px; font-weight:600; }
+.sb-foot .ur{ font-size:11px; opacity:.6; }
+
+/* ----- Main ----- */
+.main{ flex:1; min-width:0; display:flex; flex-direction:column; }
+.topbar{
+  display:flex; align-items:center; gap:16px; padding:18px 28px;
+  background:#fff; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:10;
+}
+.topbar h1{ margin:0; font-size:19px; font-weight:700; letter-spacing:-.2px; }
+.topbar .crumb{ font-size:12.5px; color:var(--muted); margin-top:2px; }
+.topbar .spacer{ flex:1; }
+.period{
+  display:flex; align-items:center; gap:8px; background:var(--bg); border:1px solid var(--line);
+  border-radius:10px; padding:8px 13px; font-size:13px; font-weight:500; color:var(--ink); cursor:pointer;
+}
+.btn-primary{
+  display:flex; align-items:center; gap:7px; background:linear-gradient(135deg,#00AEE0,#0090C4); color:#fff; border:none;
+  border-radius:10px; padding:9px 15px; font-family:inherit; font-size:13.5px; font-weight:700;
+  cursor:pointer; transition:.15s;
+}
+.btn-primary:hover{ filter:brightness(.93); }
+.content{ padding:24px 28px 40px; }
+
+/* ============================================================
+   KPI cards
+   ============================================================ */
+.kpis{ display:grid; grid-template-columns:repeat(5,1fr); gap:16px; }
+.kpi .ksub{ font-size:12px; color:var(--muted); margin-top:5px; font-weight:600; font-variant-numeric:tabular-nums; }
+.kpi{
+  background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+  box-shadow:var(--shadow); padding:18px 18px 16px;
+}
+.kpi .top{ display:flex; align-items:center; justify-content:space-between; }
+.kpi .label{ font-size:14px; color:var(--ink); font-weight:600; }
+.kpi .ic{
+  width:34px; height:34px; border-radius:9px; display:flex; align-items:center;
+  justify-content:center; font-size:17px;
+}
+.kpi .val{ font-size:29px; font-weight:700; margin-top:10px; letter-spacing:-.6px; }
+.kpi .val small{ font-size:14px; font-weight:500; color:var(--muted); }
+.kpi .ic{ box-shadow:0 2px 6px rgba(16,38,62,.07); }
+.kpi .delta{ font-size:12.5px; font-weight:600; margin-top:6px; display:flex; align-items:center; gap:4px; }
+.kpi .delta.up{ color:var(--win); }
+.kpi .delta.down{ color:var(--loss); }
+
+/* ============================================================
+   Chart grid
+   ============================================================ */
+.grid2{ display:grid; grid-template-columns:1.6fr 1fr; gap:16px; margin-top:16px; }
+.panel{
+  background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+  box-shadow:var(--shadow); padding:18px 20px 20px;
+}
+.panel-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+.panel-head h3{ margin:0; font-size:15.5px; font-weight:700; letter-spacing:-.2px; }
+.panel-head .sub{ font-size:12px; color:var(--muted); margin-top:3px; font-weight:500; }
+.panel-head .legend{ display:flex; gap:14px; font-size:12px; color:var(--muted); font-weight:600; }
+.panel-head .legend i{ display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; vertical-align:middle; box-shadow:0 1px 2px rgba(16,38,62,.12); }
+
+/* ----- Bar chart (monthly) ----- */
+.bars{ display:flex; align-items:flex-end; gap:10px; height:210px; margin-top:26px; padding-bottom:24px; position:relative; }
+.bars::before{ content:""; position:absolute; left:0; right:0; bottom:24px; height:1px; background:var(--line); }
+.bar-col{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; position:relative; }
+.bar{
+  flex:0 0 auto; position:relative;
+  width:58%; max-width:30px; border-radius:6px 6px 2px 2px;
+  background:linear-gradient(180deg,var(--chart-blue-1) 0%,var(--chart-blue-2) 60%,var(--chart-blue-3) 100%);
+  box-shadow:0 2px 6px rgba(8,131,188,.22), inset 0 1px 0 rgba(255,255,255,.35);
+  transition:filter .15s;
+}
+.bar .bval{ transform-origin:center; }
+.bar-col .mlabel{ position:absolute; bottom:-22px; font-size:11.5px; color:var(--muted); font-weight:600; }
+.bar .bval{
+  position:absolute; top:-19px; left:50%; transform:translateX(-50%);
+  font-size:11.5px; font-weight:700; color:var(--cpac-blue-dark);
+  white-space:nowrap; letter-spacing:-.2px; font-variant-numeric:tabular-nums;
+}
+.bar-col:hover .bar{ filter:brightness(1.07) saturate(1.08); }
+
+/* ----- Stacked bar chart (Win/Loss/Follow per month) ----- */
+/* ----- Stacked bar chart (Win/Loss/Follow per month) ----- */
+.sbars-svg{ width:100%; height:240px; margin-top:14px; display:block; }
+
+/* ----- Metro chart (stacked vertical bars per Metro) ----- */
+/* ----- Horizontal bar chart (Win per month) ----- */
+.hbars{ display:flex; flex-direction:column; gap:10px; margin-top:18px; }
+.hbar-row{ display:flex; align-items:center; gap:11px; }
+.hbar-row .hm{ width:34px; flex:none; font-size:11.5px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.3px; }
+.hbar-row .htrack{ flex:1; height:18px; background:var(--bg); border-radius:9px; overflow:hidden; }
+.hbar-row .hfill{ height:100%; border-radius:9px; background:linear-gradient(90deg,var(--win),#23C589); box-shadow:0 1px 3px rgba(19,166,107,.28); }
+.hbar-row .hval{ width:60px; flex:none; text-align:right; font-size:12px; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums; }
+.hbar-row.zero .hval{ color:var(--faint); font-weight:500; }
+.metro-empty{ display:flex; align-items:center; justify-content:center; height:240px; color:var(--faint); font-size:13.5px; }
+
+/* ----- Donut (status) ----- */
+.donut-wrap{ display:flex; align-items:center; gap:22px; margin-top:14px; }
+.donut{ width:140px; height:140px; flex:none; position:relative; }
+.donut .center{
+  position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+}
+.donut .center .big{ font-size:27px; font-weight:700; line-height:1; letter-spacing:-.5px; color:var(--cpac-blue-dark); }
+.donut .center .cap{ font-size:11px; color:var(--muted); margin-top:3px; font-weight:600; }
+.status-legend{ display:flex; flex-direction:column; gap:12px; flex:1; }
+.sl-row{ display:flex; align-items:center; gap:10px; }
+.sl-row .sw{ width:11px; height:11px; border-radius:3px; flex:none; }
+.sl-row .nm{ font-size:13px; font-weight:500; flex:1; }
+.sl-row .pc{ font-size:13px; font-weight:700; }
+.sl-row .ct{ font-size:11.5px; color:var(--muted); }
+
+/* ----- Cluster ranking ----- */
+.rank-list{ display:flex; flex-direction:column; gap:13px; margin-top:16px; }
+.rank-row{ display:flex; align-items:center; gap:12px; }
+.rank-row .rk{
+  width:22px; height:22px; flex:none; border-radius:6px; background:var(--cpac-blue-soft);
+  color:var(--cpac-blue); font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center;
+}
+.rank-row .info{ flex:1; min-width:0; }
+.rank-row .info .nm{ font-size:13px; font-weight:600; display:flex; justify-content:space-between; }
+.rank-row .info .nm span{ color:var(--muted); font-weight:600; }
+.rank-row .track{ height:7px; background:var(--bg); border-radius:5px; margin-top:6px; overflow:hidden; }
+.rank-row .fill{ height:100%; border-radius:5px; background:linear-gradient(90deg,var(--cpac-blue),#3B92D8); transition:width .6s; }
+
+/* ============================================================
+   Data table
+   ============================================================ */
+.table-panel{ margin-top:16px; }
+.tbar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+/* แถบ Filter หลัก ใต้การ์ดสรุป */
+.filterbar{
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+  box-shadow:var(--shadow); padding:12px 16px; margin-top:16px;
+}
+.filterbar .fb-label{ font-size:13px; font-weight:700; color:var(--cpac-blue-dark); margin-right:2px; }
+.filterbar .fb-reset{
+  margin-left:auto; font-family:inherit; font-size:12.5px; font-weight:600; color:var(--muted);
+  background:var(--bg); border:1px solid var(--line); border-radius:9px; padding:8px 13px; cursor:pointer; transition:.15s;
+}
+.filterbar .fb-reset:hover{ background:#fff; border-color:var(--cpac-blue-line); color:var(--cpac-blue-dark); }
+.tbar .search{
+  flex:1; min-width:200px; position:relative;
+}
+.tbar .search input{
+  width:100%; padding:10px 12px 10px 36px; border:1.5px solid var(--line); border-radius:10px;
+  font-family:inherit; font-size:14px; outline:none; background:var(--bg); transition:.15s;
+}
+.tbar .search input:focus{ border-color:var(--cpac-blue); background:#fff; box-shadow:0 0 0 3px rgba(11,95,174,.1); }
+.tbar .search .si{ position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--faint); font-size:15px; }
+.fil-sel{ position:relative; }
+.fil-sel select{
+  font-family:inherit; font-size:13.5px; font-weight:600; color:var(--ink); cursor:pointer;
+  background:var(--bg); border:1.5px solid var(--line); border-radius:10px;
+  padding:9px 30px 9px 13px; outline:none; -webkit-appearance:none; appearance:none; transition:.15s;
+}
+.fil-sel select:focus{ border-color:var(--cpac-blue); }
+.fil-sel::after{
+  content:""; position:absolute; right:13px; top:50%; width:7px; height:7px; margin-top:-5px;
+  border-right:2px solid var(--muted); border-bottom:2px solid var(--muted); transform:rotate(45deg); pointer-events:none;
+}
+.fil{
+  display:flex; gap:6px; background:var(--bg); border:1.5px solid var(--line); border-radius:10px; padding:4px;
+}
+.fil button{
+  border:none; background:none; font-family:inherit; font-size:13px; font-weight:600; color:var(--muted);
+  padding:7px 13px; border-radius:7px; cursor:pointer; transition:.15s;
+}
+.fil button.active{ background:#fff; color:var(--cpac-blue); box-shadow:0 1px 3px rgba(16,38,62,.1); }
+
+.tscroll{ overflow-x:auto; border:1px solid var(--line); border-radius:12px; }
+table{ width:100%; border-collapse:collapse; min-width:1420px; }
+thead th{
+  background:#F8FAFD; text-align:left; font-size:12px; font-weight:600; color:var(--muted);
+  padding:12px 14px; border-bottom:1px solid var(--line); white-space:nowrap; text-transform:uppercase; letter-spacing:.3px;
+}
+thead th.num, tbody td.num{ text-align:right; }
+tbody td{ padding:13px 14px; font-size:13.5px; border-bottom:1px solid var(--line); white-space:nowrap; }
+tbody tr:last-child td{ border-bottom:none; }
+tbody tr:hover{ background:var(--cpac-blue-soft); }
+tbody td .site{ font-weight:600; }
+.site-link{ cursor:pointer; color:var(--cpac-blue-dark); transition:.12s; display:inline-flex; align-items:center; gap:5px; }
+.site-link::after{ content:"▸"; font-size:10px; opacity:.5; }
+.site-link:hover{ color:var(--cpac-blue); text-decoration:underline; }
+tbody td .code{ font-size:11.5px; color:var(--muted); }
+.known-cell{ font-size:11px; color:var(--muted); margin-top:3px; }
+.photo-link{ margin-top:5px; display:inline-flex; align-items:center; gap:4px; font-family:inherit; font-size:11.5px; font-weight:600; color:var(--cpac-blue-dark); background:var(--cpac-blue-soft); border:1px solid var(--cpac-blue-line); border-radius:7px; padding:3px 8px; cursor:pointer; transition:.13s; }
+.photo-link:hover{ background:var(--cpac-blue); color:#fff; border-color:var(--cpac-blue); }
+.badge{
+  display:inline-flex; align-items:center; gap:5px; padding:4px 11px; border-radius:20px;
+  font-size:12px; font-weight:600;
+}
+.badge .d{ width:7px; height:7px; border-radius:50%; }
+.badge.Win{ background:var(--win-soft); color:var(--win); }
+.badge.Win .d{ background:var(--win); }
+.badge.Loss{ background:var(--loss-soft); color:var(--loss); }
+.badge.Loss .d{ background:var(--loss); }
+.badge.Follow{ background:var(--follow-soft); color:var(--follow); }
+.badge.Follow .d{ background:var(--follow); }
+.vol-num{ font-weight:600; font-variant-numeric:tabular-nums; }
+.tfoot{ display:flex; align-items:center; justify-content:space-between; margin-top:14px; font-size:13px; color:var(--muted); }
+.maplink{ color:var(--cpac-blue); text-decoration:none; font-weight:600; font-size:12.5px; }
+.maplink:hover{ text-decoration:underline; }
+.rstat-chip{ display:inline-block; font-size:10.5px; font-weight:700; font-style:normal; padding:1px 8px; border-radius:20px; margin-left:6px; vertical-align:middle; }
+.reason-split{ display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+.reason-col-head{ display:flex; align-items:center; gap:7px; font-size:12.5px; font-weight:700; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--line); }
+.reason-col-head .d{ width:8px; height:8px; border-radius:50%; flex:none; }
+.reason-empty{ font-size:12.5px; color:var(--faint); padding:8px 2px; }
+.reason-total{ margin-left:auto; font-size:12px; font-weight:700; background:var(--bg); border:1px solid var(--line); color:var(--ink); border-radius:20px; padding:2px 9px; }
+@media (max-width:720px){ .reason-split{ grid-template-columns:1fr; } }
+/* ===== แผนที่ภาพรวม (Leaflet) ===== */
+.site-map{ height:440px; width:100%; border-radius:12px; overflow:hidden; border:1px solid var(--line); background:#E8EEF3; position:relative; z-index:0; isolation:isolate; }
+.site-map .leaflet-container{ font-family:inherit; background:#E8EEF3; }
+.map-foot{ display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-top:12px; font-size:12.5px; color:var(--muted); }
+.map-foot b{ color:var(--ink); font-weight:700; }
+.site-pin{ display:block; border-radius:50%; border:2.5px solid #fff; box-shadow:0 1px 4px rgba(16,38,62,.4); }
+.leaflet-div-icon.site-pin-wrap{ background:transparent; border:none; }
+.site-pin-wrap{ background:transparent !important; border:none !important; }
+.map-pop{ font-family:inherit; }
+.map-pop .mp-site{ font-weight:700; font-size:13.5px; color:var(--ink); margin-bottom:3px; }
+.map-pop .mp-meta{ font-size:12px; color:var(--muted); line-height:1.5; }
+.map-pop .mp-badge{ display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px; margin-top:5px; }
+.map-pop .mp-link{ display:inline-block; margin-top:7px; font-size:12px; font-weight:700; color:var(--cpac-blue-dark); text-decoration:none; }
+/* ปุ่มแก้ไขในตาราง */
+.edit-btn{
+  font-family:inherit; font-size:12.5px; font-weight:600; color:var(--cpac-blue-dark);
+  background:var(--cpac-blue-soft); border:1px solid var(--cpac-blue-line);
+  border-radius:8px; padding:6px 12px; cursor:pointer; white-space:nowrap; transition:.15s;
+}
+.edit-btn:hover{ background:var(--cpac-blue); color:#fff; border-color:var(--cpac-blue); }
+
+/* ===== กราฟปริมาณการเทรายเดือน (คลิกชื่อหน่วยงาน) ===== */
+.vchart{ display:flex; align-items:flex-end; gap:9px; height:190px; padding:0 2px; }
+.vchart .vcol{ flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; }
+.vchart .vv{ font-size:10.5px; font-weight:700; color:var(--cpac-blue-dark); margin-bottom:6px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.vchart .vbar{ flex:0 0 auto; width:100%; max-width:30px; background:linear-gradient(180deg,var(--chart-blue-1),var(--chart-blue-3)); border-radius:6px 6px 2px 2px; box-shadow:0 2px 6px rgba(8,131,188,.22); }
+.vchart .vm{ font-size:10.5px; font-weight:600; color:var(--muted); margin-top:8px; }
+.vaxis{ display:flex; align-items:center; gap:10px; margin-top:14px; font-size:12px; color:var(--faint); font-weight:500; }
+.vaxis .ln{ flex:1; height:1px; background:var(--line); }
+.vempty{ display:flex; align-items:center; justify-content:center; height:190px; color:var(--faint); font-size:13.5px; text-align:center; }
+
+/* ===== Edit modal ===== */
+.modal-bg{
+  position:fixed; inset:0; z-index:2000; background:rgba(16,32,43,.5);
+  display:none; align-items:center; justify-content:center; padding:20px;
+  -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px);
+}
+.modal-bg.show{ display:flex; }
+.modal{
+  background:#fff; border-radius:16px; width:100%; max-width:460px; max-height:88vh; overflow:auto;
+  box-shadow:0 20px 60px rgba(16,38,62,.3);
+}
+.modal-head{
+  display:flex; align-items:center; justify-content:space-between; padding:18px 20px 14px;
+  border-bottom:1px solid var(--line); position:sticky; top:0; background:#fff; border-radius:16px 16px 0 0;
+}
+.modal-head h3{ margin:0; font-size:16px; font-weight:700; }
+.modal-head .x{ border:none; background:var(--bg); width:30px; height:30px; border-radius:8px; cursor:pointer; font-size:16px; color:var(--muted); }
+.modal-body{ padding:16px 20px 4px; }
+.mfield{ margin-bottom:14px; }
+.mfield label{ display:block; font-size:12.5px; font-weight:600; color:var(--muted); margin-bottom:5px; }
+.mfield input, .mfield select{
+  width:100%; font-family:inherit; font-size:14px; color:var(--ink); background:#fff;
+  border:1.5px solid var(--line); border-radius:9px; padding:10px 11px; outline:none; transition:.15s;
+  -webkit-appearance:none; appearance:none;
+}
+.mfield input:focus, .mfield select:focus{ border-color:var(--cpac-blue); box-shadow:0 0 0 3px rgba(0,150,210,.12); }
+.mrow{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.modal-foot{ display:flex; gap:10px; padding:14px 20px 20px; position:sticky; bottom:0; background:#fff; }
+.modal-foot button{ flex:1; padding:12px; border-radius:10px; font-family:inherit; font-size:14px; font-weight:700; cursor:pointer; transition:.15s; }
+.btn-cancel{ background:var(--bg); color:var(--muted); border:1px solid var(--line); }
+.btn-save{ background:linear-gradient(135deg,#00AEE0,#0090C4); color:#fff; border:none; }
+.btn-save:hover{ filter:brightness(.94); }
+.empty{ text-align:center; padding:40px; color:var(--muted); font-size:14px; }
+
+@media (max-width:1000px){
+  .kpis{ grid-template-columns:repeat(2,1fr); }
+  .grid2{ grid-template-columns:1fr; }
+  .sidebar{ display:none; }
+}
+</style>
+</head>
+
+<body>
+<div class="layout">
+
+  <!-- ===================== Sidebar ===================== -->
+  <aside class="sidebar">
+    <div class="sb-brand">
+      <div class="logo">
+        <img src="cpac-logo.png" alt="CPAC" />
+      </div>
+      <div>
+        <div class="name">CPAC Admin</div>
+        <div class="sub">ระบบงานขายคอนกรีต</div>
+      </div>
+    </div>
+    <nav class="sb-nav">
+      <a href="CPAC Home.html"><span class="ic">⌂</span> หน้าแรก (เลือกบทบาท)</a>
+      <a href="#" class="active"><span class="ic">▣</span> Dashboard</a>
+      <a href="#" id="goData"><span class="ic">▤</span> ข้อมูลหน่วยงาน</a>
+      <a href="#" id="goReport"><span class="ic">▷</span> รายงานรายเดือน</a>
+      <a href="#" id="goSettings"><span class="ic">⚙</span> ตั้งค่า</a>
+    </nav>
+    <div class="sb-foot">
+      <div class="u">
+        <div class="av" id="adminAv">AD</div>
+        <div>
+          <div class="un" id="adminName">ผู้ดูแลระบบ</div>
+          <div class="ur">Admin</div>
+        </div>
+      </div>
+      <button type="button" id="adminLogout" style="width:100%;margin-top:12px;font-family:inherit;font-size:12.5px;font-weight:600;color:#C5D4E3;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:9px;padding:9px;cursor:pointer;">⏻ ออกจากระบบ</button>
+    </div>
+  </aside>
+
+  <!-- ===================== Main ===================== -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <h1>ภาพรวมงานขาย</h1>
+        <div class="crumb">Dashboard · ข้อมูลล่าสุด 14 มิ.ย. 2569</div>
+      </div>
+      <div class="spacer"></div>
+      <div style="display:inline-flex;align-items:center;gap:6px;margin-right:4px;">
+        <span style="font-size:13px;font-weight:600;color:var(--muted);">มุมมอง</span>
+        <div style="display:inline-flex;gap:5px;background:#E7EEF5;border:1px solid #DCE5EE;border-radius:9999px;padding:5px;">
+          <a href="CPAC Mobile Preview.html" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:#6A7A89;text-decoration:none;border-radius:9999px;padding:7px 14px;">📱 CPAC staff</a>
+          <a href="CPAC Desktop Preview.html" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:#6A7A89;text-decoration:none;border-radius:9999px;padding:7px 14px;">💻 บันทึกในคอม</a>
+          <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:#13476E;background:#fff;border:1px solid #B9CADB;border-radius:9999px;padding:7px 14px;box-shadow:0 2px 8px rgba(16,38,62,.12);">🖥 Supervisor</span>
+        </div>
+      </div>
+      <div class="period">📅 ปี 2569 (YTD)</div>
+      <button class="btn-primary" id="exportBtn">⬇ Export Excel</button>
+    </div>
+
+    <div class="content">
+
+      <!-- ===== KPI ===== -->
+      <div class="kpis">
+        <div class="kpi">
+          <div class="top">
+            <span class="label">หน่วยงานทั้งหมด</span>
+            <span class="ic" style="background:var(--cpac-blue-soft);color:var(--cpac-blue);">▤</span>
+          </div>
+          <div class="val" id="kTotal">0</div>
+        </div>
+        <div class="kpi">
+          <div class="top">
+            <span class="label">ปริมาณคอนกรีต (YTD)</span>
+            <span class="ic" style="background:var(--cpac-blue-soft);color:var(--cpac-blue);">▥</span>
+          </div>
+          <div class="val"><span id="kVol">0</span> <small>ลบ.ม.</small></div>
+        </div>
+        <div class="kpi">
+          <div class="top">
+            <span class="label">Win rate</span>
+            <span class="ic" style="background:var(--win-soft);color:var(--win);">◎</span>
+          </div>
+          <div class="val"><span id="kWin">0</span><small>%</small></div>
+          <div class="ksub"><span id="kWinVol">0</span> ลบ.ม.</div>
+        </div>
+        <div class="kpi">
+          <div class="top">
+            <span class="label">Follow</span>
+            <span class="ic" style="background:var(--follow-soft);color:var(--follow);">◔</span>
+          </div>
+          <div class="val" id="kFollow">0</div>
+          <div class="ksub"><span id="kFollowVol">0</span> ลบ.ม.</div>
+        </div>
+        <div class="kpi">
+          <div class="top">
+            <span class="label">Loss</span>
+            <span class="ic" style="background:var(--loss-soft);color:var(--loss);">○</span>
+          </div>
+          <div class="val" id="kLoss">0</div>
+          <div class="ksub"><span id="kLossVol">0</span> ลบ.ม.</div>
+        </div>
+      </div>
+
+      <!-- ===== แถบ Filter หลัก (กรองทั้ง Dashboard) ===== -->
+      <div class="filterbar">
+        <span class="fb-label">🔍 กรอง:</span>
+        <div class="fil-sel">
+          <select id="metroFilter"><option value="all">Metro: ทั้งหมด</option></select>
+        </div>
+        <div class="fil-sel">
+          <select id="clusterFilter"><option value="all">Cluster: ทั้งหมด</option></select>
+        </div>
+        <div class="fil-sel">
+          <select id="ownerFilter"><option value="all">พนักงาน: ทั้งหมด</option></select>
+        </div>
+        <div class="fil-sel">
+          <select id="monthFilter"><option value="all">เดือน: ทั้งหมด</option></select>
+        </div>
+        <div class="fil" id="statusFilter">
+          <button class="active" data-f="all">ทั้งหมด</button>
+          <button data-f="Win">Win</button>
+          <button data-f="Loss">Loss</button>
+          <button data-f="Follow">Follow</button>
+        </div>
+        <button type="button" class="fb-reset" id="fbReset">✕ ล้างตัวกรอง</button>
+      </div>
+
+      <!-- ===== Charts row ===== -->
+      <div class="grid2" id="reportSection">
+        <!-- Monthly bar -->
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h3>ปริมาณคอนกรีตรายเดือน</h3>
+              <div class="sub">ปริมาณทั้งโครงการ (ลบ.ม.) · ตามวันที่ทราบข้อมูล</div>
+            </div>
+          </div>
+          <div class="bars" id="bars"></div>
+        </div>
+
+        <!-- Status donut -->
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h3>สัดส่วนสถานะงาน</h3>
+              <div class="sub">เฉพาะงานที่ปิดแล้ว · Win vs Loss</div>
+            </div>
+          </div>
+          <div class="donut-wrap">
+            <div class="donut">
+              <svg viewBox="0 0 36 36" width="140" height="140">
+                <circle cx="18" cy="18" r="15.9155" fill="none" stroke="var(--line)" stroke-width="3.6"></circle>
+                <circle id="dWin" cx="18" cy="18" r="15.9155" fill="none" stroke="var(--win)" stroke-width="3.6"
+                        stroke-dasharray="0 100" stroke-dashoffset="25" stroke-linecap="round"></circle>
+                <circle id="dFollow" cx="18" cy="18" r="15.9155" fill="none" stroke="var(--follow)" stroke-width="3.6"
+                        stroke-dasharray="0 100" stroke-dashoffset="25" stroke-linecap="round"></circle>
+                <circle id="dLoss" cx="18" cy="18" r="15.9155" fill="none" stroke="var(--loss)" stroke-width="3.6"
+                        stroke-dasharray="0 100" stroke-dashoffset="25" stroke-linecap="round"></circle>
+              </svg>
+              <div class="center">
+                <div class="big" id="dCenter">0%</div>
+                <div class="cap">Win rate</div>
+              </div>
+            </div>
+            <div class="status-legend" id="statusLegend"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Stacked bar: รายเดือน + แยกตาม Metro ===== -->
+      <div class="grid2" style="margin-top:16px;">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h3>ยอดปริมาณคอนกรีตรายเดือน (Win / Loss / Follow)</h3>
+              <div class="sub">ปริมาณทั้งโครงการ · Win=วันที่คาดว่าจะเท · Loss/Follow=วันที่ทราบข้อมูล</div>
+            </div>
+            <div class="legend">
+              <span><i style="background:var(--win)"></i>Win</span>
+              <span><i style="background:var(--follow)"></i>Follow</span>
+              <span><i style="background:var(--loss)"></i>Loss</span>
+            </div>
+          </div>
+          <svg class="sbars-svg" id="sbars" preserveAspectRatio="none"></svg>
+        </div>
+
+        <!-- Win รายเดือน (แท่งแนวนอน) -->
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h3>Win Rate รายเดือน</h3>
+              <div class="sub">Win ÷ (Win+Loss) · อัตราชนะจากงานที่ปิดแล้วในแต่ละเดือน</div>
+            </div>
+            <div class="legend"><span><i style="background:var(--win)"></i>Win</span></div>
+          </div>
+          <div class="hbars" id="winMonthChart"></div>
+        </div>
+      </div>
+
+      <!-- ===== ภาพรวมแผนที่หน่วยงาน ===== -->
+      <div class="panel" style="margin-top:16px;">
+        <div class="panel-head">
+          <div>
+            <h3>ภาพรวมแผนที่หน่วยงาน</h3>
+            <div class="sub">ตำแหน่งหน่วยงานทั้งหมด · สีหมุดตามสถานะ · ตามตัวกรองด้านบน</div>
+          </div>
+          <div class="legend">
+            <span><i style="background:var(--win)"></i>Win</span>
+            <span><i style="background:var(--follow)"></i>Follow</span>
+            <span><i style="background:var(--loss)"></i>Loss</span>
+          </div>
+        </div>
+        <div id="siteMap" class="site-map"></div>
+        <div class="map-foot" id="mapFoot"></div>
+      </div>
+
+      <!-- ===== Cluster ranking + reasons ===== -->
+      <div class="grid2" style="grid-template-columns:1fr 1fr;">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h3>ปริมาณคอนกรีตตาม Cluster</h3>
+              <div class="sub">เรียงจากมากไปน้อย</div>
+            </div>
+          </div>
+          <div class="rank-list" id="clusterRank"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h3>สาเหตุ Loss / Follow</h3>
+              <div class="sub">แยกตามสถานะ · Loss / Follow</div>
+            </div>
+          </div>
+          <div class="reason-split">
+            <div class="reason-col">
+              <div class="reason-col-head" style="color:var(--loss);"><span class="d" style="background:var(--loss);"></span>Loss — ปิดไม่ได้ <span class="reason-total" id="reasonLossTotal"></span></div>
+              <div class="rank-list" id="reasonLoss"></div>
+            </div>
+            <div class="reason-col">
+              <div class="reason-col-head" style="color:var(--follow);"><span class="d" style="background:var(--follow);"></span>Follow — รอติดตาม <span class="reason-total" id="reasonFollowTotal"></span></div>
+              <div class="rank-list" id="reasonFollow"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Data table ===== -->
+      <div class="panel table-panel" id="dataPanel">
+        <div class="panel-head" style="margin-bottom:14px;">
+          <div>
+            <h3>ข้อมูลหน่วยงานทั้งหมด</h3>
+            <div class="sub"><span id="rowCount">0</span> รายการ</div>
+          </div>
+        </div>
+        <div class="tbar">
+          <div class="search">
+            <span class="si">⌕</span>
+            <input type="text" id="search" placeholder="ค้นหา หน่วยงาน / Site code / Cluster..." />
+          </div>
+        </div>
+        <div class="tscroll">
+          <table>
+            <thead>
+              <tr>
+                <th>หน่วยงาน</th>
+                <th>Metro / Cluster</th>
+                <th>โรงงาน</th>
+                <th class="num">ระยะ</th>
+                <th class="num">ปริมาณ (ลบ.ม.)</th>
+                <th>สถานะ</th>
+                <th>คู่แข่ง</th>
+                <th class="num">ส่วนลด CPAC</th>
+                <th class="num">ส่วนลดคู่แข่ง</th>
+                <th>คาดว่าจะเริ่มใช้</th>
+                <th>ติดที่ (Follow)</th>
+                <th>แผนที่</th>
+                <th>จัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+        <div class="tfoot">
+          <span id="footInfo">แสดง 0 รายการ</span>
+          <span>อัปเดตล่าสุด: 14 มิ.ย. 2569 14:20</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ===== หน้าต่างตั้งค่า ===== -->
+<div class="modal-bg" id="settingsModal">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-head">
+      <h3>ตั้งค่า</h3>
+      <button type="button" class="x" id="stClose">✕</button>
+    </div>
+    <div class="modal-body" style="padding:18px 22px;">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:6px;">ผู้ดูแลที่เข้าใช้</div>
+      <div id="stUser" style="font-size:15px;font-weight:700;margin-bottom:18px;">—</div>
+
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px;">จัดการข้อมูลตัวอย่าง</div>
+      <button type="button" id="stReseed" style="width:100%;margin-bottom:10px;padding:12px;border-radius:10px;font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;background:var(--cpac-blue-soft);color:var(--cpac-blue-dark);border:1px solid var(--cpac-blue-line);">↺ รีเฟรชข้อมูลตัวอย่างใหม่</button>
+      <button type="button" id="stClear" style="width:100%;padding:12px;border-radius:10px;font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;background:var(--loss-soft);color:var(--loss);border:1px solid #F4CFCC;">🗑 ล้างข้อมูลที่กรอกทั้งหมด</button>
+      <div style="font-size:11.5px;color:var(--faint);margin-top:10px;line-height:1.5;">* การล้างข้อมูลมีผลเฉพาะข้อมูลที่บันทึกในเครื่องนี้ (demo) — ใช้เพื่อทดสอบเท่านั้น</div>
+    </div>
+    <div class="modal-foot">
+      <button type="button" class="btn-cancel" id="stCancel" style="flex:none;padding-left:24px;padding-right:24px;">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== หน้าต่างกราฟปริมาณการเทรายเดือน ===== -->
+<div class="modal-bg" id="viewModal">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-head">
+      <h3 id="vTitle">ปริมาณการเทรายเดือน</h3>
+      <button type="button" class="x" id="vClose">✕</button>
+    </div>
+    <div class="modal-body" style="padding:18px 22px 8px;">
+      <div id="vMeta" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:6px;"></div>
+      <div id="vSub" style="font-size:12.5px;color:var(--muted);margin-bottom:14px;"></div>
+      <div class="vchart" id="vChart"></div>
+      <div class="vaxis"><span id="vUnit">ลบ.ม. / เดือน</span><span class="ln"></span><span id="vTotal"></span></div>
+      <div id="vDetail"></div>
+    </div>
+    <div class="modal-foot">
+      <button type="button" class="btn-cancel" id="vCancel" style="flex:none;padding-left:22px;padding-right:22px;">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== หน้าต่างแก้ไขข้อมูล ===== -->
+<div class="modal-bg" id="editModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>แก้ไขข้อมูลหน่วยงาน</h3>
+      <button type="button" class="x" id="mClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="mId" />
+      <div class="mfield">
+        <label>ชื่อหน่วยงาน</label>
+        <input type="text" id="mSite" />
+      </div>
+      <div class="mrow">
+        <div class="mfield">
+          <label>สถานะงาน</label>
+          <select id="mStatus">
+            <option>Win</option>
+            <option>Loss</option>
+            <option>Follow</option>
+          </select>
+        </div>
+        <div class="mfield">
+          <label>ปริมาณคอนกรีต (ลบ.ม.)</label>
+          <input type="number" id="mVol" min="0" step="100" />
+        </div>
+      </div>
+      <div class="mrow">
+        <div class="mfield">
+          <label>ระยะจัดส่ง</label>
+          <input type="number" id="mDist" min="0" step="0.1" />
+        </div>
+        <div class="mfield" id="mCompWrap">
+          <label>คู่แข่ง (เฉพาะ Loss)</label>
+          <select id="mComp">
+            <option value="">—</option>
+            <option>INSEE</option>
+            <option>น่ำเฮง</option>
+            <option>TPI</option>
+            <option>เอกชนรายย่อย</option>
+          </select>
+        </div>
+      </div>
+      <div class="mrow">
+        <div class="mfield">
+          <label>คาดว่าจะเริ่มใช้คอนกรีต</label>
+          <select id="mStart"></select>
+        </div>
+      </div>
+      <div class="mrow">
+        <div class="mfield">
+          <label>ส่วนลด CPAC (%)</label>
+          <input type="number" id="mDisc" min="0" max="100" step="0.5" />
+        </div>
+        <div class="mfield">
+          <label>ส่วนลดคู่แข่ง (%)</label>
+          <input type="number" id="mCdisc" min="0" max="100" step="0.5" />
+        </div>
+      </div>
+      <div class="mfield" id="mReasonWrap">
+        <label>สาเหตุ / ติดที่ (Loss / Follow)</label>
+        <input type="text" id="mReason" placeholder="เช่น ราคา, เครดิต, ระยะทาง" />
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button type="button" class="btn-cancel" id="mCancel">ยกเลิก</button>
+      <button type="button" class="btn-save" id="mSave">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<script src="cpac-app.js"></script>
+<script>
+/* ---- กั้นหน้า: ต้องล็อกอินเป็นผู้ดูแลระบบ ---- */
+const ADMIN = CPAC.requireRole('admin', 'CPAC Admin Login.html');
+if(ADMIN){
+  CPAC.seed();
+  document.getElementById('adminName').textContent = ADMIN.name;
+  document.getElementById('adminAv').textContent = CPAC.initials(ADMIN.name);
+  document.getElementById('adminLogout').addEventListener('click', ()=>{ CPAC.logout(); location.replace('CPAC Admin Login.html'); });
+}
+
+/* ============================================================
+   ข้อมูลตัวอย่าง (DEMO) — ในระบบจริงข้อมูลชุดนี้จะดึงมาจาก Airtable
+   แต่ละ record = 1 หน่วยงาน
+   ============================================================ */
+const DATA = [];
+/* ชุดข้อมูลตัวอย่างเดิม (ปิดใช้งานแล้ว — เริ่มจากศูนย์เพื่อกรอกเอง) */
+const _DEMO_UNUSED = [
+  { site:'โครงการ ลุมพินี พระราม 9', code:'S-1024', metro:'Metro 1', cluster:'พระราม 9',   plant:'โรงงาน A', dist:12.4, vol:8600, status:'Win',    competitor:'INSEE',  reason:'',            disc:5.0, cdisc:3.0, start:'2026-08', map:1 },
+  { site:'อาคารสำนักงาน รัชดา',      code:'S-1031', metro:'Metro 1', cluster:'บางซื่อ',     plant:'โรงงาน A', dist:8.1,  vol:5400, status:'Win',    competitor:'น่ำเฮง', reason:'',            disc:4.5, cdisc:2.5, start:'2026-07', map:1 },
+  { site:'หมู่บ้าน เดอะคิวบ์ บางนา',  code:'S-1044', metro:'Metro 3', cluster:'บางนา',       plant:'โรงงาน B', dist:21.7, vol:3200, status:'Loss',   competitor:'INSEE',  reason:'ราคา',        disc:3.0, cdisc:7.0, start:'2026-09', map:1 },
+  { site:'คอนโด ไอดีโอ สุขุมวิท',     code:'S-1052', metro:'Metro 1', cluster:'พระราม 4',   plant:'โรงงาน A', dist:6.3,  vol:11200,status:'Win',    competitor:'TPI',    reason:'',            disc:6.0, cdisc:4.0, start:'2026-10', map:1 },
+  { site:'โรงงาน อมตะนคร ชลบุรี',     code:'S-1060', metro:'Metro 3', cluster:'สุวรรณภูมิ', plant:'โรงงาน C', dist:38.2, vol:14800,status:'Follow', competitor:'',       reason:'เครดิต',      disc:5.5, cdisc:5.0, start:'2027-01', map:1 },
+  { site:'ถนนเลี่ยงเมือง นนทบุรี',    code:'S-1071', metro:'Metro 2', cluster:'บางบัวทอง',   plant:'โรงงาน B', dist:15.9, vol:6700, status:'Win',    competitor:'INSEE',  reason:'',            disc:4.0, cdisc:3.5, start:'2026-08', map:1 },
+  { site:'ห้างสรรพสินค้า บางใหญ่',    code:'S-1085', metro:'Metro 2', cluster:'บางบัวทอง',   plant:'โรงงาน B', dist:24.5, vol:4100, status:'Loss',   competitor:'น่ำเฮง', reason:'มีเจ้าประจำ', disc:3.5, cdisc:6.5, start:'2026-11', map:1 },
+  { site:'โรงเรียน สมุทรปราการ',      code:'S-1092', metro:'Metro 3', cluster:'พระราม 2',   plant:'โรงงาน C', dist:29.8, vol:2900, status:'Follow', competitor:'',       reason:'ราคา',        disc:4.5, cdisc:6.0, start:'2027-02', map:1 },
+  { site:'คอนโด เดอะ ไลน์ จตุจักร',  code:'S-1103', metro:'Metro 1', cluster:'บางซื่อ',     plant:'โรงงาน A', dist:9.2,  vol:9300, status:'Win',    competitor:'INSEE',  reason:'',            disc:5.0, cdisc:3.0, start:'2026-09', map:1 },
+  { site:'โกดังสินค้า บางพลี',        code:'S-1110', metro:'Metro 3', cluster:'บางนา',       plant:'โรงงาน C', dist:33.1, vol:7500, status:'Win',    competitor:'น่ำเฮง', reason:'',            disc:5.5, cdisc:4.0, start:'2026-10', map:1 },
+  { site:'อพาร์ทเมนต์ ปากเกร็ด',      code:'S-1125', metro:'Metro 2', cluster:'รังสิต',     plant:'โรงงาน B', dist:18.6, vol:3800, status:'Follow', competitor:'',       reason:'ระยะทาง',     disc:4.0, cdisc:4.5, start:'2027-03', map:1 },
+  { site:'โครงการ บ้านกลางเมือง',     code:'S-1138', metro:'Metro 1', cluster:'พระราม 4',   plant:'โรงงาน A', dist:11.0, vol:5100, status:'Loss',   competitor:'TPI',    reason:'ราคา',        disc:3.0, cdisc:7.5, start:'2026-12', map:1 },
+  { site:'อาคารจอดรถ สุวรรณภูมิ',     code:'S-1146', metro:'Metro 3', cluster:'สุวรรณภูมิ', plant:'โรงงาน C', dist:41.5, vol:12600,status:'Win',    competitor:'INSEE',  reason:'',            disc:6.0, cdisc:4.5, start:'2026-11', map:1 },
+  { site:'มหาวิทยาลัย รังสิต',        code:'S-1159', metro:'Metro 2', cluster:'รังสิต',     plant:'โรงงาน B', dist:27.3, vol:4600, status:'Follow', competitor:'',       reason:'เครดิต',      disc:4.5, cdisc:5.5, start:'2027-01', map:1 },
+  { site:'คอนโด ลุมพินี รามอินทรา',   code:'S-1167', metro:'Metro 2', cluster:'รามอินทรา', plant:'โรงงาน B', dist:19.4, vol:7200, status:'Win',    competitor:'น่ำเฮง', reason:'',            disc:5.0, cdisc:3.5, start:'2026-10', map:1 },
+  { site:'โครงการ มีนบุรี เพลส',      code:'S-1172', metro:'Metro 2', cluster:'รามอินทรา', plant:'โรงงาน B', dist:22.8, vol:3400, status:'Follow', competitor:'',       reason:'ระยะทาง',     disc:4.0, cdisc:4.5, start:'2027-02', map:1 },
+];
+
+/* ============================================================
+   ดึงข้อมูลที่ Sales กรอกจากฟอร์ม (เก็บใน localStorage) มารวมกับข้อมูลด้านบน
+   รายการใหม่ล่าสุดจะอยู่บนสุดของตาราง
+   ============================================================ */
+try{
+  const saved = JSON.parse(localStorage.getItem('cpac_entries') || '[]');
+  /* เรียงใหม่->เก่า แล้วใส่ไว้ด้านหน้า DATA */
+  saved.sort((a,b)=>(b.ts||0)-(a.ts||0)).forEach(r=> DATA.unshift(r));
+}catch(err){ console.warn('อ่านข้อมูลในเครื่องไม่สำเร็จ', err); }
+
+/* ให้แต่ละแถวมีรหัสประจำตัว (_id) สำหรับอ้างอิงตอนแก้ไข
+   - ข้อมูลที่ Sales กรอก: ใช้เวลาที่บันทึก (u+ts)
+   - ข้อมูลตัวอย่าง: ใช้ Site code (d+code) */
+DATA.forEach(d=>{ d._id = d.ts ? ('u'+d.ts) : ('d'+d.code); });
+
+/* นำค่าที่เคยแก้ไขไว้ (cpac_overrides) มาทับข้อมูลเดิม */
+let OVERRIDES = {};
+try{ OVERRIDES = JSON.parse(localStorage.getItem('cpac_overrides') || '{}'); }catch(e){}
+DATA.forEach(d=>{ if(OVERRIDES[d._id]) Object.assign(d, OVERRIDES[d._id]); });
+
+/* กำหนดเจ้าของงาน (พนักงานขาย) ให้ข้อมูลตัวอย่างตาม Metro
+   — ข้อมูลที่ Sales กรอกเองมี owner อยู่แล้ว จึงไม่ทับ */
+const TEAM_OWNER = { 'Metro 1':'ทศพร (ยู)', 'Metro 2':'กรรณมณ (แนน)', 'Metro 3':'ไปรมา (แตง)' };
+DATA.forEach(d=>{ if(!d.owner) d.owner = TEAM_OWNER[d.metro] || '—'; });
+
+/* ข้อมูลตัวอย่างเดิมไม่มี "วันที่ทราบข้อมูล" — ใส่ให้กระจายตามเดือน เพื่อให้กราฟรายเดือนมีข้อมูล
+   (ข้อมูลที่ Sales กรอกเองมี knownDate จากฟอร์มอยู่แล้ว จึงไม่ทับ) */
+DATA.forEach((d,i)=>{ if(!d.knownDate){ const mo=((i*7+1)%12)+1; d.knownDate='2026-'+String(mo).padStart(2,'0')+'-15'; } });
+
+/* รายการ Cluster หลักของแต่ละ Metro (ให้ตัวกรองแสดงครบ แม้ยังไม่มีข้อมูลในบาง Cluster) */
+const CLUSTER_MASTER = {
+  'Metro 1': ['บางซื่อ', 'พระราม 4', 'พระราม 9'],
+  'Metro 2': ['รังสิต', 'รามอินทรา', 'บางบัวทอง'],
+  'Metro 3': ['บางนา', 'พระราม 2', 'สุวรรณภูมิ'],
+};
+
+/* ปริมาณรายเดือน (DEMO) — ลบ.ม. */
+const MONTHLY = { JAN:6200, FEB:7100, MAR:9800, APR:8400, MAY:11200, JUN:10600, JUL:9200, AUG:8800, SEP:7600, OCT:6900, NOV:5400, DEC:4800 };
+
+/* ============================================================
+   คำนวณตัวเลขสรุป
+   ============================================================ */
+const fmt = n => n.toLocaleString('th-TH');
+const total = DATA.length;
+const totalVol = DATA.reduce((s,d)=>s+(d.projectVol||0),0);
+const wins = DATA.filter(d=>d.status==='Win').length;
+const losses = DATA.filter(d=>d.status==='Loss').length;
+const follows = DATA.filter(d=>d.status==='Follow').length;
+/* สัดส่วนสถานะ คิดจาก "ปริมาณคอนกรีตทั้งโครงการ" */
+const winVol = DATA.filter(d=>d.status==='Win').reduce((s,d)=>s+(d.projectVol||0),0);
+const lossVol = DATA.filter(d=>d.status==='Loss').reduce((s,d)=>s+(d.projectVol||0),0);
+const followVol = DATA.filter(d=>d.status==='Follow').reduce((s,d)=>s+(d.projectVol||0),0);
+const winRate = (winVol+lossVol) ? Math.round(winVol/(winVol+lossVol)*100) : 0;   /* Win ÷ (Win+Loss) ตามปริมาณ */
+
+document.getElementById('kTotal').textContent = total;
+document.getElementById('kVol').textContent = fmt(totalVol);
+document.getElementById('kWin').textContent = winRate;
+document.getElementById('kWinVol').textContent = fmt(DATA.filter(d=>d.status==='Win').reduce((s,d)=>s+(d.projectVol||0),0));
+document.getElementById('kFollow').textContent = follows;
+document.getElementById('kLoss').textContent = losses;
+document.getElementById('kFollowVol').textContent = fmt(DATA.filter(d=>d.status==='Follow').reduce((s,d)=>s+(d.projectVol||0),0));
+document.getElementById('kLossVol').textContent = fmt(DATA.filter(d=>d.status==='Loss').reduce((s,d)=>s+(d.projectVol||0),0));
+document.getElementById('rowCount').textContent = total;
+
+/* ============================================================
+   กราฟแท่งรายเดือน
+   ============================================================ */
+const bars = document.getElementById('bars');
+const TOTAL_VOL_ALL = DATA.reduce((s,d)=>s+(d.vol||0),0) || 1;
+
+/* สถานะตัวกรองปัจจุบัน (ประกาศไว้ก่อน เพราะกราฟอ้างถึงตอนโหลด) */
+let curFilter = 'all', curSearch = '', curMetro = 'all', curCluster = 'all', curOwner = 'all', curMonth = 'all';
+
+/* เดือนของงาน (0-11) จาก "วันที่ทราบข้อมูล" (knownDate รูปแบบ YYYY-MM-DD) */
+function monthOf(d){
+  if(!d.knownDate) return -1;
+  const mm = parseInt(String(d.knownDate).split('-')[1], 10);
+  return (mm>=1 && mm<=12) ? mm-1 : -1;
+}
+/* เดือนของงาน (0-11) จาก "วันที่คาดว่าจะเท" (start = expected_use) */
+function startMonthOf(d){
+  if(d.start && /^\d{4}-\d{2}$/.test(d.start)) return parseInt(d.start.split('-')[1],10)-1;
+  return -1;
+}
+/* เดือนสำหรับกราฟ Win/Loss/Follow: Win=วันที่คาดว่าจะเท · Loss/Follow=วันที่ทราบข้อมูล */
+function statusMonthOf(d){ return d.status==='Win' ? startMonthOf(d) : monthOf(d); }
+/* ตรงกับเดือนที่เลือกในตัวกรองหรือไม่ — ใช้ "เดือนตามสถานะ" ให้ตรงกับกราฟ
+   (Win = เดือนคาดว่าจะเท · Loss/Follow = เดือนทราบข้อมูล) */
+function monthMatch(d){ return curMonth==='all' || statusMonthOf(d)===parseInt(curMonth,10); }
+/* ชุดข้อมูลสำหรับกราฟ — ใช้ตัวกรองชุดเดียวกับตาราง/สรุป */
+function getChartPool(){
+  const q = curSearch.toLowerCase();
+  return DATA.filter(d=>{
+    const okM = curMetro==='all' || d.metro===curMetro;
+    const okC = curCluster==='all' || d.cluster===curCluster;
+    const okF = curFilter==='all' || d.status===curFilter;
+    const okO = curOwner==='all' || d.owner===curOwner;
+    const okS = !q || [d.site,d.code,d.cluster,d.metro,d.plant,d.competitor,d.owner].join(' ').toLowerCase().includes(q);
+    return okM && okC && okF && okO && okS && monthMatch(d);
+  });
+}
+
+/* วาดกราฟปริมาณคอนกรีตรายเดือน — ใช้ "ปริมาณทั้งโครงการ" นับตามวันที่ทราบข้อมูล */
+function drawBars(){
+  bars.innerHTML = '';
+  const pool = getChartPool();
+  const vol = months.map(()=>0);
+  pool.forEach(d=>{ const mi=monthOf(d); if(mi>=0) vol[mi]+=(d.projectVol||0); });
+  const maxM = Math.max(...vol, 1);
+  const plotPx = Math.max(120, bars.clientHeight - parseFloat(getComputedStyle(bars).paddingBottom||24));
+  months.forEach((m,i)=>{
+    const v = vol[i];
+    const col = document.createElement('div');
+    col.className='bar-col';
+    col.innerHTML = `<div class="bar"><span class="bval">${v?fmt(v):''}</span></div>
+      <span class="mlabel">${m}</span>`;
+    bars.appendChild(col);
+    const bar = col.querySelector('.bar');
+    const px = v>0 ? Math.max(4, v/maxM*plotPx) : 0;
+    bar.style.height = px+'px';
+  });
+}
+
+/* ============================================================
+   กราฟแท่งซ้อน Win/Loss/Follow รายเดือน
+   DEMO: สุ่มแจกแจงจำนวนงานแต่ละสถานะในแต่ละเดือน
+   (ในระบบจริงนับจากข้อมูลที่ Sales กรอกในแต่ละเดือน)
+   ============================================================ */
+const sbars = document.getElementById('sbars');
+/* วาดกราฟด้วย SVG — แม่นยำทุกขนาดหน้าจอ */
+const SV_W=960, SV_H=240, SV_PAD_B=26, SV_TOP=10;
+const plotH = SV_H - SV_PAD_B - SV_TOP;
+const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+const colW = SV_W / months.length;
+const barW = Math.min(34, colW*0.6);
+const NS='http://www.w3.org/2000/svg';
+sbars.setAttribute('viewBox', `0 0 ${SV_W} ${SV_H}`);
+const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim() || '#888';
+const segColor = { Win:cssVar('--win'), Follow:cssVar('--follow'), Loss:cssVar('--loss') };
+
+/* วาดกราฟแท่งซ้อน — รับอัตราส่วนแต่ละสถานะ (ratio) เพื่อย่อตาม Filter */
+function drawSbars(){
+  sbars.innerHTML = '';
+  const pool = getChartPool();
+  const byM = months.map(()=>({Win:0,Follow:0,Loss:0}));
+  pool.forEach(d=>{ const mi=statusMonthOf(d); if(mi>=0 && byM[mi][d.status]!==undefined) byM[mi][d.status]+=(d.projectVol||0); });
+  const maxS = Math.max(...byM.map(s=>s.Win+s.Follow+s.Loss), 1);
+  const barMaxH = plotH - 22;   /* เผื่อที่ว่างด้านบนให้ตัวเลขยอด ไม่ให้ชนขอบ */
+  months.forEach((m,i)=>{
+    const s = byM[i];
+    const cx = i*colW + colW/2;
+    const x = cx - barW/2;
+    let yCursor = SV_TOP + plotH;
+    const order=[['Win',s.Win],['Follow',s.Follow],['Loss',s.Loss]];
+    order.forEach(([k,v],j)=>{
+      if(v<=0) return;
+      const h = v/maxS*barMaxH;
+      yCursor -= h;
+      const r = document.createElementNS(NS,'rect');
+      r.setAttribute('x', x); r.setAttribute('width', barW);
+      r.setAttribute('y', yCursor); r.setAttribute('height', h);
+      r.setAttribute('fill', segColor[k]);
+      if(j===order.filter(o=>o[1]>0).length-1){ r.setAttribute('rx',4); }
+      sbars.appendChild(r);
+      const t=document.createElementNS(NS,'title');
+      t.textContent=`${m} — ${k}: ${fmt(Math.round(v))} ลบ.ม.`;
+      r.appendChild(t);
+    });
+    const lbl=document.createElementNS(NS,'text');
+    lbl.setAttribute('x',cx); lbl.setAttribute('y',SV_H-8);
+    lbl.setAttribute('text-anchor','middle');
+    lbl.setAttribute('font-size','12'); lbl.setAttribute('font-weight','600'); lbl.setAttribute('fill','#6A7A89');
+    lbl.textContent=m;
+    sbars.appendChild(lbl);
+    /* ตัวเลขรวมเหนือแท่ง */
+    const tot = Math.round(s.Win + s.Follow + s.Loss);
+    if(tot>0){
+      const topY = SV_TOP + plotH - (tot/maxS*barMaxH);
+      const vlbl=document.createElementNS(NS,'text');
+      vlbl.setAttribute('x',cx); vlbl.setAttribute('y', topY-7);
+      vlbl.setAttribute('text-anchor','middle');
+      vlbl.setAttribute('font-size','13'); vlbl.setAttribute('font-weight','700'); vlbl.setAttribute('fill','#16202B');
+      vlbl.textContent=fmt(tot);
+      sbars.appendChild(vlbl);
+    }
+  });
+}
+
+/* ============================================================
+   Donut สถานะงาน
+   ============================================================ */
+const _vt0 = (winVol+lossVol) || 1;
+const pWin = winVol/_vt0*100, pLoss = lossVol/_vt0*100, pFollow = 0;
+function setArc(id, pct, offset){
+  const el = document.getElementById(id);
+  el.setAttribute('stroke-dasharray', `${pct} ${100-pct}`);
+  el.setAttribute('stroke-dashoffset', offset);
+}
+/* เริ่มที่ 12 นาฬิกา (offset 25) แล้วไล่ตามเข็ม */
+setTimeout(()=>{
+  setArc('dWin', pWin, 25);
+  setArc('dFollow', pFollow, 25 - pWin);
+  setArc('dLoss', pLoss, 25 - pWin - pFollow);
+}, 100);
+document.getElementById('dCenter').textContent = winRate+'%';
+
+document.getElementById('statusLegend').innerHTML = [
+  ['Win', winVol, pWin, wins, 'var(--win)'],
+  ['Loss', lossVol, pLoss, losses, 'var(--loss)'],
+].map(([nm,vol,pc,ct,c])=>`
+  <div class="sl-row">
+    <span class="sw" style="background:${c}"></span>
+    <span class="nm">${nm}</span>
+    <span class="pc">${Math.round(pc)}%</span>
+    <span class="ct">${fmt(vol)} ลบ.ม. · ${ct} Site</span>
+  </div>`).join('');
+
+/* ============================================================
+   อันดับ Cluster ตามปริมาณ
+   ============================================================ */
+const byCluster = {};
+DATA.forEach(d=> byCluster[d.cluster] = (byCluster[d.cluster]||0)+(d.projectVol||0) );
+const clusterArr = Object.entries(byCluster).sort((a,b)=>b[1]-a[1]);
+const maxC = clusterArr.length ? clusterArr[0][1] : 1;
+document.getElementById('clusterRank').innerHTML = clusterArr.map(([nm,v],i)=>`
+  <div class="rank-row">
+    <span class="rk">${i+1}</span>
+    <div class="info">
+      <div class="nm">${nm} <span>${fmt(v)} ลบ.ม.</span></div>
+      <div class="track"><div class="fill" style="width:0"></div></div>
+    </div>
+  </div>`).join('');
+setTimeout(()=>{
+  document.querySelectorAll('#clusterRank .fill').forEach((f,i)=>{
+    f.style.width = (clusterArr[i][1]/maxC*100)+'%';
+  });
+}, 150);
+
+/* ============================================================
+   สาเหตุที่ขายไม่ได้ — แยก 2 ช่อง (Loss / Follow)
+   ============================================================ */
+function buildReasonList(rows, status, elId){
+  const m={};
+  rows.filter(d=>d.status===status && d.reason).forEach(d=> m[d.reason]=(m[d.reason]||0)+1);
+  const arr=Object.entries(m).sort((a,b)=>b[1]-a[1]);
+  const mx=arr.length?arr[0][1]:1;
+  const soft = status==='Loss'?'var(--loss-soft)':'var(--follow-soft)';
+  const col  = status==='Loss'?'var(--loss)':'var(--follow)';
+  const grad = status==='Loss'?'linear-gradient(90deg,var(--loss),#E8645C)':'linear-gradient(90deg,var(--follow),#F0B24B)';
+  const el=document.getElementById(elId); if(!el) return;
+  const totEl=document.getElementById(elId+'Total');
+  const totGames=rows.filter(d=>d.status===status && d.reason).length;
+  if(totEl) totEl.textContent = totGames+' งาน';
+  if(!arr.length){ el.innerHTML='<div class="reason-empty">— ไม่มีข้อมูล —</div>'; return; }
+  el.innerHTML = arr.map(([nm,ct])=>`
+    <div class="rank-row">
+      <span class="rk" style="background:${soft};color:${col};">${ct}</span>
+      <div class="info">
+        <div class="nm">${nm} <span>${ct} งาน</span></div>
+        <div class="track"><div class="fill" style="width:0;background:${grad};" data-w="${ct/mx*100}"></div></div>
+      </div>
+    </div>`).join('');
+  setTimeout(()=>{ el.querySelectorAll('.fill').forEach(f=> f.style.width=f.dataset.w+'%'); }, 60);
+}
+function renderReasons(rows){
+  buildReasonList(rows,'Loss','reasonLoss');
+  buildReasonList(rows,'Follow','reasonFollow');
+}
+renderReasons(DATA);
+
+/* ============================================================
+   ตารางข้อมูล + ค้นหา + กรองสถานะ
+   ============================================================ */
+const tbody = document.getElementById('tbody');
+
+/* ชุดข้อมูลตามตัวกรองปัจจุบัน (ใช้ทั้งตารางและ Export) */
+function filteredRows(){
+  return DATA.filter(d=>{
+    const okF = curFilter==='all' || d.status===curFilter;
+    const okM = curMetro==='all' || d.metro===curMetro;
+    const okC = curCluster==='all' || d.cluster===curCluster;
+    const okO = curOwner==='all' || d.owner===curOwner;
+    const q = curSearch.toLowerCase();
+    const okS = !q || [d.site,d.code,d.cluster,d.metro,d.plant,d.competitor,d.owner].join(' ').toLowerCase().includes(q);
+    return okF && okM && okC && okO && okS && monthMatch(d);
+  });
+}
+
+/* ===== Export เป็นไฟล์ Excel (CSV เปิดด้วย Excel ได้, รองรับภาษาไทย) ===== */
+const TH_MO_FULL = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+function startLabel(s){ const [y,m]=(s||'').split('-'); return y?`${TH_MO_FULL[+m]} ${y}`:''; }
+function knownLabelFull(s){ if(!s) return '—'; const p=String(s).split('-'); return p.length>=3 ? `${+p[2]} ${TH_MO_FULL[+p[1]]} ${(+p[0])+543}` : (p[1]?`${TH_MO_FULL[+p[1]]} ${p[0]}`:'—'); }
+function csvCell(v){ v = (v==null?'':String(v)); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; }
+function exportExcel(){
+  const rows = filteredRows();
+  const head = ['Site code','หน่วยงาน','Metro','Cluster','โรงงาน','พนักงานขาย','สถานะ','ปริมาณรายเดือน (ลบ.ม.)','ปริมาณทั้งโครงการ (ลบ.ม.)','ระยะจัดส่ง','ส่วนลด CPAC (%)','ส่วนลดคู่แข่ง (%)','คู่แข่ง','สาเหตุ/ติดที่','วันที่ทราบข้อมูล','คาดว่าจะเท','เดือนที่ใช้ในกราฟ'];
+  const STAT = {Win:'Win',Loss:'Loss',Follow:'Follow'};
+  const knownLabel = s => { const [y,m]=(s||'').split('-'); return (y&&m)?`${TH_MO_FULL[+m]} ${y}`:''; };
+  const lines = [head.map(csvCell).join(',')];
+  rows.forEach(d=>{
+    const cm = statusMonthOf(d);              /* เดือนที่กราฟสรุป Win/Loss/Follow ใช้ */
+    lines.push([
+      d.code, d.site, d.metro, d.cluster, d.plant, d.owner||'',
+      STAT[d.status]||d.status, d.vol||0, d.projectVol||0, (d.dist||0), (d.disc||0), (d.cdisc||0),
+      (d.status==='Win'?'CPAC':(d.competitor||'')), d.reason||'',
+      knownLabel(d.knownDate), startLabel(d.start), (cm>=0?TH_MO_FULL[cm+1]:'')
+    ].map(csvCell).join(','));
+  });
+  const csv = '\uFEFF' + lines.join('\r\n');   /* BOM ให้ Excel อ่านภาษาไทยถูก */
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const today = new Date().toISOString().slice(0,10);
+  a.href = url; a.download = `CPAC_งานขาย_${today}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+document.getElementById('exportBtn').addEventListener('click', exportExcel);
+
+/* ===== เมนู: รายงานรายเดือน — เลื่อนไปกราฟรายเดือน + ไฮไลต์ ===== */
+document.getElementById('goReport').addEventListener('click', e=>{
+  e.preventDefault();
+  const sec = document.getElementById('reportSection');
+  sec.scrollIntoView({behavior:'smooth', block:'start'});
+  sec.style.transition='box-shadow .3s'; sec.style.boxShadow='0 0 0 3px rgba(0,150,210,.35)';
+  setTimeout(()=>{ sec.style.boxShadow='none'; }, 1400);
+});
+
+/* ===== เมนู: ตั้งค่า — เปิดหน้าต่าง ===== */
+const settingsModal = document.getElementById('settingsModal');
+document.getElementById('goSettings').addEventListener('click', e=>{
+  e.preventDefault();
+  document.getElementById('stUser').textContent = (CPAC.session()||{}).name || 'ผู้ดูแลระบบ';
+  settingsModal.classList.add('show');
+});
+function closeSettings(){ settingsModal.classList.remove('show'); }
+document.getElementById('stClose').addEventListener('click', closeSettings);
+document.getElementById('stCancel').addEventListener('click', closeSettings);
+settingsModal.addEventListener('click', e=>{ if(e.target===settingsModal) closeSettings(); });
+document.getElementById('stReseed').addEventListener('click', ()=>{
+  if(confirm('รีเฟรชข้อมูลตัวอย่างใหม่? (ข้อมูลที่กรอกเองจะยังอยู่)')){
+    try{ localStorage.setItem('cpac_seeded','0'); }catch(e){}
+    location.reload();
+  }
+});
+document.getElementById('stClear').addEventListener('click', ()=>{
+  if(confirm('ล้างข้อมูลที่กรอกทั้งหมดในเครื่องนี้? (ใช้สำหรับทดสอบ)')){
+    try{ localStorage.setItem('cpac_entries','[]'); localStorage.setItem('cpac_seeded','0'); }catch(e){}
+    location.reload();
+  }
+});
+
+function render(){
+  const rows = filteredRows();
+  tbody.innerHTML = rows.length ? rows.map(d=>{
+    /* คู่แข่ง: Win -> CPAC, Loss -> ชื่อคู่แข่ง, Follow -> ไม่ใส่ */
+    let compCell;
+    if(d.status==='Win')      compCell = '<span style="color:var(--win);font-weight:600;">CPAC</span>';
+    else if(d.status==='Loss') compCell = `<span style="color:var(--loss);font-weight:600;">${d.competitor}</span>`;
+    else                       compCell = '<span style="color:var(--faint)">—</span>';
+    /* เดือน/ปี ที่คาดว่าจะเริ่มใช้ */
+    const [yy,mm] = (d.start||'').split('-');
+    const startTxt = yy ? `${['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'][+mm]} ${yy}` : '—';
+    /* งาน Follow แสดงว่าติดที่อะไร */
+    const followCell = d.status==='Follow'
+      ? `<span class="badge Follow"><span class="d"></span>${d.reason||'-'}</span>`
+      : '<span style="color:var(--faint)">—</span>';
+    return `
+    <tr>
+      <td><div class="site site-link" data-id="${d._id}" title="ดูกราฟปริมาณรายเดือน">${d.site}</div><div class="code">${d.code}</div><div class="known-cell">📅 ทราบ ${knownLabelFull(d.knownDate)}</div>${(d.photos&&d.photos.length)?`<button type="button" class="photo-link" data-id="${d._id}">📷 ดูรูป (${d.photos.length})</button>`:''}</td>
+      <td>${d.metro} · ${d.cluster}</td>
+      <td>${d.plant}</td>
+      <td class="num">${d.dist.toFixed(1)}</td>
+      <td class="num"><span class="vol-num">${fmt(d.vol)}</span></td>
+      <td><span class="badge ${d.status}"><span class="d"></span>${d.status}</span></td>
+      <td>${compCell}</td>
+      <td class="num"><span class="vol-num">${d.disc.toFixed(1)}%</span></td>
+      <td class="num"><span class="vol-num">${d.cdisc.toFixed(1)}%</span></td>
+      <td>${startTxt}</td>
+      <td>${followCell}</td>
+      <td><a class="maplink" href="${d.mapUrl || ('https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(d.site))}" target="_blank" rel="noopener">📍 ดูแผนที่${d.map ? '' : ' (ค้นชื่อ)'}</a></td>
+      <td><button type="button" class="edit-btn" data-id="${d._id}">✎ แก้ไข</button></td>
+    </tr>`;
+  }).join('')
+    : `<tr><td colspan="13" class="empty">ไม่พบข้อมูลที่ตรงกับเงื่อนไข</td></tr>`;
+  document.getElementById('footInfo').textContent = `แสดง ${rows.length} จาก ${DATA.length} รายการ`;
+}
+render();
+/* วาดกราฟรายเดือนครั้งแรก (หลังตัวแปร months/cur* พร้อมแล้ว) */
+drawBars();
+drawSbars();
+const metroFilter = document.getElementById('metroFilter');
+const clusterFilter = document.getElementById('clusterFilter');
+const METROS = [...new Set(DATA.map(d=>d.metro))].filter(Boolean).sort();
+METROS.forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent='Metro: '+m.replace('Metro ',''); metroFilter.appendChild(o); });
+function fillClusterOptions(){
+  const pool = DATA.filter(d=> curMetro==='all' || d.metro===curMetro);
+  /* รวม Cluster จากข้อมูลจริง + รายการหลัก เพื่อให้แสดงครบทุก Cluster */
+  const master = curMetro==='all'
+    ? Object.values(CLUSTER_MASTER).flat()
+    : (CLUSTER_MASTER[curMetro] || []);
+  const clusters = [...new Set([...pool.map(d=>d.cluster), ...master])].filter(Boolean).sort();
+  clusterFilter.innerHTML = '<option value="all">Cluster: ทั้งหมด</option>' +
+    clusters.map(c=>`<option value="${c}">Cluster: ${c}</option>`).join('');
+  curCluster = 'all';
+}
+fillClusterOptions();
+metroFilter.addEventListener('change', e=>{ curMetro = e.target.value; fillClusterOptions(); render(); refreshSummary(); });
+clusterFilter.addEventListener('change', e=>{ curCluster = e.target.value; render(); refreshSummary(); });
+
+/* ===== เติมตัวเลือกพนักงาน (เจ้าของงาน) ===== */
+const ownerFilter = document.getElementById('ownerFilter');
+const OWNERS = [...new Set(DATA.map(d=>d.owner))].filter(o=> o && o!=='—').sort();
+OWNERS.forEach(o=>{ const op=document.createElement('option'); op.value=o; op.textContent='พนักงาน: '+o; ownerFilter.appendChild(op); });
+ownerFilter.addEventListener('change', e=>{ curOwner = e.target.value; render(); refreshSummary(); });
+
+/* ===== เติมตัวเลือกเดือน (ตามวันที่ทราบข้อมูล) ===== */
+const monthFilter = document.getElementById('monthFilter');
+const TH_MO = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+TH_MO.forEach((m,i)=>{ const o=document.createElement('option'); o.value=String(i); o.textContent='เดือน: '+m; monthFilter.appendChild(o); });
+monthFilter.addEventListener('change', e=>{ curMonth = e.target.value; render(); refreshSummary(); });
+
+document.getElementById('search').addEventListener('input', e=>{ curSearch = e.target.value; render(); });
+document.querySelectorAll('#statusFilter button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('#statusFilter button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active'); curFilter = b.dataset.f; render(); refreshSummary();
+  });
+});
+/* ปุ่มล้างตัวกรองทั้งหมด */
+document.getElementById('fbReset').addEventListener('click', ()=>{
+  curMetro='all'; curCluster='all'; curFilter='all'; curSearch=''; curOwner='all'; curMonth='all';
+  metroFilter.value='all'; fillClusterOptions(); ownerFilter.value='all'; monthFilter.value='all';
+  document.getElementById('search').value='';
+  document.querySelectorAll('#statusFilter button').forEach(x=>x.classList.remove('active'));
+  document.querySelector('#statusFilter button[data-f="all"]').classList.add('active');
+  render(); refreshSummary();
+});
+document.getElementById('goData').addEventListener('click', e=>{
+  e.preventDefault();
+  document.getElementById('dataPanel').scrollIntoView({behavior:'smooth', block:'start'});
+});
+
+/* ============================================================
+   แก้ไขข้อมูล — เปิดหน้าต่าง / บันทึก / อัปเดตสรุป
+   ============================================================ */
+const modal = document.getElementById('editModal');
+const $ = id => document.getElementById(id);
+
+/* เติมตัวเลือกเดือน/ปี ในช่อง "คาดว่าจะเริ่มใช้คอนกรีต" */
+(function(){
+  const sel = $('mStart'); if(!sel) return;
+  const MO = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  let html = '<option value="">—</option>';
+  [2026,2027,2028].forEach(y=> MO.forEach((m,i)=>{ html += `<option value="${y}-${String(i+1).padStart(2,'0')}">${m} ${y}</option>`; }));
+  sel.innerHTML = html;
+})();
+
+/* คำนวณตัวเลขสรุป + กราฟโดนัท + อันดับ ใหม่ทุกครั้งหลังแก้ไข */
+function refreshSummary(){
+  const D = DATA.filter(d=>{
+    const okM = curMetro==='all' || d.metro===curMetro;
+    const okC = curCluster==='all' || d.cluster===curCluster;
+    const okF = curFilter==='all' || d.status===curFilter;
+    const okO = curOwner==='all' || d.owner===curOwner;
+    return okM && okC && okF && okO && monthMatch(d);
+  });
+  const t = D.length || 1;
+  const tVol = D.reduce((s,d)=>s+(d.projectVol||0),0);
+  const w = D.filter(d=>d.status==='Win').length;
+  const l = D.filter(d=>d.status==='Loss').length;
+  const f = D.filter(d=>d.status==='Follow').length;
+  /* สัดส่วนสถานะ — คิดจากปริมาณคอนกรีตทั้งโครงการ */
+  const wV = D.filter(d=>d.status==='Win').reduce((s,d)=>s+(d.projectVol||0),0);
+  const lV = D.filter(d=>d.status==='Loss').reduce((s,d)=>s+(d.projectVol||0),0);
+  const fV = D.filter(d=>d.status==='Follow').reduce((s,d)=>s+(d.projectVol||0),0);
+  const wr = (wV+lV) ? Math.round(wV/(wV+lV)*100) : 0;   /* Win ÷ (Win+Loss) ตามปริมาณ */
+  $('kTotal').textContent = D.length;
+  $('kVol').textContent = fmt(tVol);
+  $('kWin').textContent = wr;
+  $('kWinVol').textContent = fmt(D.filter(d=>d.status==='Win').reduce((s,d)=>s+(d.projectVol||0),0));
+  $('kFollow').textContent = f;
+  $('kLoss').textContent = D.filter(d=>d.status==='Loss').length;
+  $('kFollowVol').textContent = fmt(D.filter(d=>d.status==='Follow').reduce((s,d)=>s+(d.projectVol||0),0));
+  $('kLossVol').textContent = fmt(D.filter(d=>d.status==='Loss').reduce((s,d)=>s+(d.projectVol||0),0));
+  $('rowCount').textContent = D.length;
+  /* โดนัท — Win vs Loss ตามปริมาณคอนกรีต (ตัด Follow ออก) */
+  const vt=(wV+lV)||1;
+  const pw=wV/vt*100, pl=lV/vt*100;
+  setArc('dWin', pw, 25);
+  setArc('dFollow', 0, 25 - pw);
+  setArc('dLoss', pl, 25 - pw);
+  $('dCenter').textContent = wr+'%';
+  $('statusLegend').innerHTML = [
+    ['Win', wV, pw, w, 'var(--win)'],
+    ['Loss', lV, pl, l, 'var(--loss)'],
+  ].map(([nm,vol,pc,ct,c])=>`
+    <div class="sl-row">
+      <span class="sw" style="background:${c}"></span>
+      <span class="nm">${nm}</span>
+      <span class="pc">${Math.round(pc||0)}%</span>
+      <span class="ct">${fmt(vol)} ลบ.ม. · ${ct} Site</span>
+    </div>`).join('');
+  /* อันดับ Cluster */
+  const bc={}; D.forEach(d=> bc[d.cluster]=(bc[d.cluster]||0)+(d.projectVol||0));
+  const ca=Object.entries(bc).sort((a,b)=>b[1]-a[1]);
+  const mc=ca.length?ca[0][1]:1;
+  $('clusterRank').innerHTML = ca.map(([nm,v],i)=>`
+    <div class="rank-row">
+      <span class="rk">${i+1}</span>
+      <div class="info">
+        <div class="nm">${nm} <span>${fmt(v)} ลบ.ม.</span></div>
+        <div class="track"><div class="fill" style="width:${v/mc*100}%"></div></div>
+      </div>
+    </div>`).join('');
+  /* สาเหตุ */
+  /* สาเหตุ — แยก 2 ช่อง (Loss / Follow) */
+  renderReasons(D);
+
+  /* อัปเดตกราฟรายเดือนตามตัวกรอง (นับจากวันที่ทราบข้อมูล) */
+  drawBars();
+  drawSbars();
+  drawWinMonthChart();
+  drawMap();
+}
+
+/* ===== กราฟแท่งแนวนอน: Win รายเดือน
+   — ปริมาณคอนกรีตที่ปิดได้ (Win) · นับตามเดือนที่คาดว่าจะเท
+   (ตอบสนองตัวกรองทั้งหมด) ===== */
+const winMonthEl = document.getElementById('winMonthChart');
+function drawWinMonthChart(){
+  const pool = getChartPool();
+  const winVol = months.map(()=>0);
+  const lossVol = months.map(()=>0);
+  pool.forEach(d=>{
+    const mi = statusMonthOf(d); if(mi<0) return;
+    if(d.status==='Win')  winVol[mi]  += (d.projectVol||0);
+    if(d.status==='Loss') lossVol[mi] += (d.projectVol||0);
+  });
+  /* Win rate รายเดือน = Win ÷ (Win+Loss) ของเดือนนั้น */
+  const rate = months.map((m,i)=>{ const den = winVol[i]+lossVol[i]; return den>0 ? winVol[i]/den*100 : null; });
+  winMonthEl.innerHTML = months.map((m,i)=>{
+    const r = rate[i];
+    const has = r!==null;
+    const w = has ? Math.max(3, r) : 0;   /* แท่งยาวตาม % เต็มสเกล 100% */
+    return `<div class="hbar-row${has?'':' zero'}">`
+      + `<span class="hm">${m}</span>`
+      + `<div class="htrack">${has?`<div class="hfill" style="width:${w}%"></div>`:''}</div>`
+      + `<span class="hval">${has?r.toFixed(0)+'%':'–'}</span></div>`;
+  }).join('');
+}
+drawWinMonthChart();
+
+/* ============================================================
+   ภาพรวมแผนที่หน่วยงาน (Leaflet + OpenStreetMap — ไม่ต้องใช้ API key)
+   - ถ้ามีพิกัดใน mapUrl (?q=lat,lng หรือ query=lat,lng) ใช้เลย
+   - ถ้าไม่มี ใช้พิกัดกลาง Cluster + กระจายเล็กน้อยแบบคงที่ (ไม่ให้หมุดทับกัน)
+   ============================================================ */
+const CLUSTER_GEO = {
+  'พระราม 9':[13.7563,100.5650], 'พระราม 4':[13.7220,100.5440], 'พระราม 2':[13.6480,100.4480],
+  'บางซื่อ':[13.8020,100.5370], 'บางนา':[13.6680,100.6040], 'บางบัวทอง':[13.9160,100.4260],
+  'รังสิต':[14.0220,100.7320], 'รามอินทรา':[13.8480,100.6710], 'สุวรรณภูมิ':[13.6900,100.7500]
+};
+const METRO_FALLBACK = { 'Metro 1':[13.7460,100.5340], 'Metro 2':[13.9000,100.5200], 'Metro 3':[13.6700,100.6300] };
+
+/* แปลงลิงก์ Google Maps -> [lat, lng] รองรับหลายรูปแบบ
+   ลำดับความแม่นยำ: หมุดสถานที่ (!3d!4d) > จุดศูนย์กลาง (@) > q/ll/query > เลขคู่ใดๆ */
+function parseLatLng(url){
+  if(!url) return null;
+  const s = String(url);
+  /* 0) DMS: 13°46'32.4"N 100°31'39.2"E (รองรับเครื่องหมายหลายแบบ) */
+  const dms = s.match(/(\d{1,3})[°\s]+(\d{1,2})['\u2032\s]+([\d.]+)["\u2033\s]*([NSns])[,\s]+(\d{1,3})[°\s]+(\d{1,2})['\u2032\s]+([\d.]+)["\u2033\s]*([EWew])/);
+  if(dms){
+    let la = (+dms[1]) + (+dms[2])/60 + (+dms[3])/3600; if(/[Ss]/.test(dms[4])) la=-la;
+    let lo = (+dms[5]) + (+dms[6])/60 + (+dms[7])/3600; if(/[Ww]/.test(dms[8])) lo=-lo;
+    return [la, lo];
+  }
+  let m = s.match(/!3d(-?\d{1,3}\.\d+)!4d(-?\d{1,3}\.\d+)/);          /* หมุดสถานที่จริง */
+  if(m) return [parseFloat(m[1]), parseFloat(m[2])];
+  m = s.match(/@(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/);                  /* @lat,lng (กลางจอ) */
+  if(m) return [parseFloat(m[1]), parseFloat(m[2])];
+  m = s.match(/[?&](?:q|query|ll|sll|daddr|destination|center)=(-?\d{1,3}\.\d+),\s*(-?\d{1,3}\.\d+)/i); /* q=lat,lng (รวม GPS ปุ่ม) */
+  if(m) return [parseFloat(m[1]), parseFloat(m[2])];
+  m = s.match(/\/(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/);                 /* /lat,lng ใน path */
+  if(m) return [parseFloat(m[1]), parseFloat(m[2])];
+  m = s.match(/(-?\d{1,2}\.\d{4,})[, ]+(-?\d{2,3}\.\d{4,})/);          /* เลขคู่ใดๆ (ทางเลือกท้าย) */
+  if(m) return [parseFloat(m[1]), parseFloat(m[2])];
+  return null;
+}
+
+function siteLatLng(d){
+  /* 1) พิกัดที่ Staff ปักหมุดเอง (แม่นยำที่สุด) */
+  if(typeof d.lat==='number' && typeof d.lng==='number' && !isNaN(d.lat) && !isNaN(d.lng)){
+    const r=[d.lat,d.lng]; r.exact=true; return r;
+  }
+  const exact = parseLatLng(d.mapUrl);
+  if(exact){ exact.exact = true; return exact; }
+  const base = (CLUSTER_GEO[d.cluster] || METRO_FALLBACK[d.metro] || [13.7460,100.5340]).slice();
+  let h = 0; const key = String(d.code||d.site||''); for(let i=0;i<key.length;i++) h = (h*31 + key.charCodeAt(i)) % 100000;
+  const jx = ((h % 100)/100 - 0.5) * 0.05;
+  const jy = ((Math.floor(h/100) % 100)/100 - 0.5) * 0.05;
+  const r = [base[0]+jx, base[1]+jy]; r.exact = false; return r;
+}
+
+const STAT_COLOR = { Win:getComputedStyle(document.documentElement).getPropertyValue('--win').trim()||'#15924C',
+                     Loss:getComputedStyle(document.documentElement).getPropertyValue('--loss').trim()||'#D2342B',
+                     Follow:getComputedStyle(document.documentElement).getPropertyValue('--follow').trim()||'#D9870B' };
+let _map=null, _markers=null;
+function drawMap(){
+  const el = document.getElementById('siteMap'); if(!el || typeof L==='undefined') return;
+  if(!_map){
+    _map = L.map(el, { scrollWheelZoom:false, attributionControl:true }).setView([13.78,100.55], 10);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:18, attribution:'© OpenStreetMap' }).addTo(_map);
+    _markers = L.layerGroup().addTo(_map);
+  }
+  _markers.clearLayers();
+  const pool = getChartPool();
+  const pts = [];
+  pool.forEach(d=>{
+    const ll = siteLatLng(d); pts.push(ll);
+    const color = STAT_COLOR[d.status] || '#888';
+    /* หมุดปักแผนที่ (teardrop) — รูปทรงเดียวกันทุกหมุด ต่างกันแค่สีตามสถานะ */
+    const pinSvg = `<svg width="28" height="38" viewBox="0 0 28 38" xmlns="http://www.w3.org/2000/svg" style="display:block;filter:drop-shadow(0 2px 3px rgba(16,38,62,.35))">`+
+      `<path d="M14 1C7 1 1.5 6.5 1.5 13.5C1.5 23 14 37 14 37S26.5 23 26.5 13.5C26.5 6.5 21 1 14 1Z" fill="${color}" stroke="#fff" stroke-width="2"/>`+
+      `<circle cx="14" cy="13.5" r="4.5" fill="#fff"/></svg>`;
+    const marker = L.marker(ll, { icon: L.divIcon({ className:'site-pin-wrap', html:pinSvg, iconSize:[28,38], iconAnchor:[14,37], popupAnchor:[0,-32] }) });
+    const href = d.mapUrl || ('https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(d.site));
+    const locNote = ll.exact
+      ? '<span style="color:var(--win)">📍 พิกัดจริงจากลิงก์ที่บันทึก</span>'
+      : '<span style="color:var(--follow)">≈ ตำแหน่งโดยประมาณ (ไม่ได้แนบพิกัด)</span>';
+    marker.bindPopup(
+      `<div class="map-pop"><div class="mp-site">${d.site}</div>`+
+      `<div class="mp-meta">${d.code||''} · ${d.metro} · ${d.cluster}<br/>ปริมาณทั้งโครงการ ${fmt(d.projectVol||0)} ลบ.ม.<br/>${locNote}</div>`+
+      `<span class="mp-badge" style="background:${color}22;color:${color}">${d.status}</span><br/>`+
+      `<a class="mp-link" href="${href}" target="_blank" rel="noopener">📍 เปิด Google Maps ›</a></div>`
+    );
+    _markers.addLayer(marker);
+  });
+  const wins = pool.filter(d=>d.status==='Win').length, foll = pool.filter(d=>d.status==='Follow').length, loss = pool.filter(d=>d.status==='Loss').length;
+  document.getElementById('mapFoot').innerHTML =
+    `แสดง <b>${pool.length}</b> หน่วยงาน · <b style="color:var(--win)">${wins}</b> Win · <b style="color:var(--follow)">${foll}</b> Follow · <b style="color:var(--loss)">${loss}</b> Loss · สีหมุด = สถานะงาน`;
+  if(pts.length){ _map.fitBounds(pts, { padding:[40,40], maxZoom:12 }); }
+  setTimeout(()=>_map.invalidateSize(), 80);
+}
+drawMap();
+
+/* เปิดหน้าต่างแก้ไข (ใช้ event delegation) */
+tbody.addEventListener('click', e=>{
+  /* คลิกชื่อหน่วยงาน — เปิดกราฟปริมาณรายเดือน */
+  const link = e.target.closest('.site-link');
+  if(link){ openSiteChart(link.dataset.id); return; }
+  /* คลิก "ดูรูป" — เปิด lightbox */
+  const pl = e.target.closest('.photo-link');
+  if(pl){ const r=DATA.find(d=>d._id===pl.dataset.id); if(r&&r.photos) CPAC.lightbox(r.photos,0); return; }
+  /* คลิก "ดูแผนที่" — เปิดแท็บใหม่จริง (เลี่ยงปัญหา Google ไม่ยอมเปิดในกรอบ) */
+  const map = e.target.closest('.maplink');
+  if(map){
+    e.preventDefault();
+    window.open(map.href, '_blank', 'noopener');
+    return;
+  }
+  const btn = e.target.closest('.edit-btn');
+  if(!btn) return;
+  const rec = DATA.find(d=> d._id === btn.dataset.id);
+  if(!rec) return;
+  $('mId').value    = rec._id;
+  $('mSite').value  = rec.site || '';
+  $('mStatus').value= rec.status || 'Win';
+  $('mVol').value   = rec.vol || 0;
+  $('mDist').value  = rec.dist || 0;
+  $('mStart').value = rec.start || '';
+  $('mComp').value  = rec.competitor || '';
+  $('mDisc').value  = rec.disc || 0;
+  $('mCdisc').value = rec.cdisc || 0;
+  $('mReason').value= rec.reason || '';
+  modal.classList.add('show');
+});
+
+/* ============================================================
+   กราฟปริมาณการเทรายเดือน (เปิดจากการคลิกชื่อหน่วยงาน)
+   - ถ้ามีข้อมูลรายเดือนจริง (vol_JAN..vol_DEC) ใช้เลย
+   - ถ้าไม่มี (ข้อมูลตัวอย่าง) กระจายยอดรวมแบบสมจริงรอบเดือนที่ทราบงาน
+   ============================================================ */
+const MO_KEYS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+function monthlyOf(rec){
+  const real = MO_KEYS.map(m=> Number(rec['vol_'+m])||0);
+  if(real.some(v=>v>0)) return { arr:real, real:true };
+  /* สังเคราะห์: เริ่มเทจากเดือนที่ "คาดว่าจะเริ่มใช้" (start) แล้วไล่ไปข้างหน้า */
+  const total = Number(rec.vol)||0;
+  if(!total) return { arr:MO_KEYS.map(()=>0), real:false };
+  let startM = 5;
+  if(rec.start && /^\d{4}-\d{2}$/.test(rec.start)) startM = parseInt(rec.start.split('-')[1],10)-1;
+  else if(rec.knownDate) startM = parseInt(String(rec.knownDate).split('-')[1],10)-1;
+  const seed = (rec.code||rec.site||'').split('').reduce((s,c)=>s+c.charCodeAt(0),0);
+  const w = [0.18,0.30,0.26,0.16,0.08,0.02];   /* น้ำหนักนับ "ไปข้างหน้า" จากเดือนเริ่ม */
+  const span = 4 + (seed%2);                     /* จำนวนเดือนที่เทต่อเนื่อง */
+  const raw = MO_KEYS.map((_,i)=>{
+    const d = i - startM;                        /* เฉพาะเดือนตั้งแต่เริ่มเป็นต้นไป */
+    if(d < 0 || d > span) return 0;
+    const jitter = 0.85 + ((seed>>i)&3)*0.10;
+    return (w[d]||0.02) * jitter;
+  });
+  const sum = raw.reduce((s,v)=>s+v,0) || 1;
+  const arr = raw.map(v=> Math.round(total*v/sum/10)*10);
+  /* ปรับเศษให้รวมเท่ายอดจริง — ลงที่เดือนเริ่ม */
+  const diff = total - arr.reduce((s,v)=>s+v,0);
+  arr[startM] = Math.max(0, arr[startM]+diff);
+  return { arr, real:false };
+}
+function openSiteChart(id){
+  const rec = DATA.find(d=> d._id === id);
+  if(!rec) return;
+  const { arr, real } = monthlyOf(rec);
+  const max = Math.max(...arr, 1);
+  $('vTitle').textContent = rec.site;
+  $('vMeta').innerHTML = `<span class="badge ${rec.status}"><span class="d"></span>${({Win:'Win',Loss:'Loss',Follow:'Follow'})[rec.status]||rec.status}</span>`
+    + `<span style="font-size:12.5px;color:var(--cpac-blue-dark);font-weight:700;background:var(--cpac-blue-soft);border-radius:20px;padding:5px 12px;">${rec.code||'-'}</span>`
+    + `<span style="font-size:13px;color:var(--muted);">${rec.metro} · ${rec.cluster} · ${rec.owner||''}</span>`;
+  $('vSub').textContent = real
+    ? 'ปริมาณคอนกรีตที่เทจริงในแต่ละเดือน (จากข้อมูลที่บันทึก)'
+    : 'ประมาณการแผนการเทรายเดือน (กระจายจากยอดรวมทั้งโครงการ)';
+  $('vTotal').textContent = 'รวม ' + fmt(arr.reduce((s,v)=>s+v,0)) + ' ลบ.ม.';
+  const chart = $('vChart');
+  if(arr.every(v=>v===0)){
+    chart.innerHTML = '<div class="vempty">ยังไม่มีข้อมูลปริมาณรายเดือน</div>';
+  } else {
+    const plotPx = Math.max(110, ($('vChart').clientHeight||190) - 42);
+    chart.innerHTML = MO_KEYS.map((m,i)=>{
+      const v = arr[i];
+      const px = v>0 ? Math.max(4, v/max*plotPx) : 0;
+      return `<div class="vcol"><span class="vv">${v?fmt(v):''}</span>`
+        + `<div class="vbar" style="height:${px}px"></div>`
+        + `<span class="vm">${m}</span></div>`;
+    }).join('');
+  }
+  /* ----- ข้อมูลโครงการ / รายละเอียดเพิ่มเติม ----- */
+  const extraRows = [
+    ['ผรม. (ผู้รับเหมา)', rec.contractor],
+    ['เบอร์ติดต่อลูกค้า', rec.customerPhone],
+    ['ปริมาณทั้งโครงการ', rec.projectVol ? fmt(rec.projectVol)+' ลบ.ม.' : ''],
+  ].filter(r=>r[1]);
+  const noteBlock = (label, txt)=> `<div style="margin-top:12px;">`
+    + `<div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px;">${label}</div>`
+    + (txt
+        ? `<div style="font-size:13.5px;color:var(--ink);line-height:1.6;white-space:pre-wrap;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 13px;">${txt.replace(/</g,'&lt;')}</div>`
+        : `<div style="font-size:13px;color:var(--faint);">— ไม่ได้ระบุ —</div>`)
+    + `</div>`;
+  $('vDetail').innerHTML =
+    `<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line);">`
+    + (extraRows.length ? `<div style="display:flex;flex-wrap:wrap;gap:8px 18px;margin-bottom:4px;">`
+        + extraRows.map(r=>`<span style="font-size:12.5px;color:var(--muted);">${r[0]}: <b style="color:var(--ink);font-weight:700;">${String(r[1]).replace(/</g,'&lt;')}</b></span>`).join('')
+        + `</div>` : '')
+    + noteBlock('รายละเอียดโครงการ', rec.projectDetail)
+    + noteBlock('รายละเอียดเพิ่มเติม', rec.detail)
+    + `</div>`;
+  document.getElementById('viewModal').classList.add('show');
+}
+const viewModal = document.getElementById('viewModal');
+function closeView(){ viewModal.classList.remove('show'); }
+$('vClose').addEventListener('click', closeView);
+$('vCancel').addEventListener('click', closeView);
+viewModal.addEventListener('click', e=>{ if(e.target===viewModal) closeView(); });
+
+function closeModal(){ modal.classList.remove('show'); }
+$('mClose').addEventListener('click', closeModal);
+$('mCancel').addEventListener('click', closeModal);
+modal.addEventListener('click', e=>{ if(e.target===modal) closeModal(); });
+
+/* บันทึกการแก้ไข */
+$('mSave').addEventListener('click', ()=>{
+  const id = $('mId').value;
+  const rec = DATA.find(d=> d._id === id);
+  if(!rec) return;
+  const changes = {
+    site: $('mSite').value.trim() || rec.site,
+    status: $('mStatus').value,
+    vol: Number($('mVol').value)||0,
+    dist: Number($('mDist').value)||0,
+    start: $('mStart').value,
+    competitor: $('mComp').value,
+    disc: Number($('mDisc').value)||0,
+    cdisc: Number($('mCdisc').value)||0,
+    reason: $('mReason').value.trim(),
+  };
+  Object.assign(rec, changes);
+  /* เก็บค่าที่แก้ไว้ใน localStorage (cpac_overrides) ให้คงอยู่หลังรีเฟรช */
+  try{
+    OVERRIDES[id] = Object.assign(OVERRIDES[id]||{}, changes);
+    localStorage.setItem('cpac_overrides', JSON.stringify(OVERRIDES));
+  }catch(err){ console.warn('บันทึกการแก้ไขไม่สำเร็จ', err); }
+  render();
+  refreshSummary();
+  closeModal();
+});
+</script>
+</body>
+</html>

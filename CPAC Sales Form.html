@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>บันทึกข้อมูลงานขายคอนกรีต — CPAC</title>
+
+<!-- ฟอนต์: IBM Plex Sans Thai (โหลดจาก Google Fonts) -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+/* ============================================================
+   🎨  สีหลักของฟอร์ม  — แก้สีตรงนี้ได้เลย
+   ============================================================ */
+:root{
+  --cpac-blue:        #00AEE0;   /* สีฟ้าหลัก CPAC (จากโลโก้ #00BBF2) */
+  --cpac-blue-bright: #00BBF2;   /* ฟ้าสดจากโลโก้ (พื้นหลังหัวฟอร์ม) */
+  --cpac-blue-dark:   #0090C4;   /* ฟ้าเข้ม (ปุ่ม / ตอนกด) ให้ตัวหนังสือขาวอ่านชัด */
+  --cpac-blue-soft:   #E4F6FD;   /* ฟ้าอ่อน (พื้นหลังอ่อนๆ) */
+  --cpac-blue-line:   #BCE7F8;   /* เส้นขอบสีฟ้า */
+
+  --ink:    #16202B;   /* สีตัวหนังสือหลัก */
+  --muted:  #6A7A89;   /* สีตัวหนังสือรอง */
+  --line:   #E3E9F0;   /* เส้นขอบทั่วไป */
+  --bg:     #F4F7FB;   /* พื้นหลังหน้า */
+  --card:   #FFFFFF;   /* พื้นหลังการ์ด */
+
+  --win:    #15924C;   /* สถานะ Win (เขียว) */
+  --loss:   #D2342B;   /* สถานะ Loss (แดง) */
+  --follow: #D9870B;   /* สถานะ Follow (ส้ม) */
+
+  --radius: 14px;
+  --shadow: 0 1px 2px rgba(16,38,62,.05), 0 8px 24px rgba(16,38,62,.06);
+}
+
+/* ============================================================
+   พื้นฐาน
+   ============================================================ */
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ margin:0; padding:0; }
+body{
+  font-family:"IBM Plex Sans Thai", system-ui, -apple-system, sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  font-size:16px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.app{
+  max-width:480px;
+  margin:0 auto;
+  min-height:100vh;
+  background:var(--bg);
+  position:relative;
+  padding-bottom:96px; /* เผื่อที่ให้ปุ่มส่งด้านล่าง */
+}
+
+/* ============================================================
+   หัวฟอร์ม (Header)
+   ============================================================ */
+.header{
+  position:sticky; top:0; z-index:20;
+  background:linear-gradient(135deg, #00BBF2 0%, #00A6DC 55%, #008FC6 100%);
+  color:#fff;
+  padding:18px 20px 22px;
+  box-shadow:0 4px 18px rgba(0,150,210,.30);
+  position:relative;
+  overflow:hidden;
+}
+/* ลายเส้นโครงรถจางๆ ด้านหลังหัวฟอร์ม (ตกแต่ง) */
+.header::after{
+  content:""; position:absolute; right:-30px; bottom:-26px; width:190px; height:130px;
+  background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 40' fill='none' stroke='white' stroke-width='1.4' opacity='1'><ellipse cx='38' cy='17' rx='20' ry='12'/><path d='M20 28 L18 16 L30 11 L50 10'/><rect x='4' y='15' width='14' height='13' rx='2'/><circle cx='15' cy='31' r='4'/><circle cx='46' cy='31' r='4'/></svg>") no-repeat center/contain;
+  opacity:.10; pointer-events:none;
+}
+.brand{ display:flex; align-items:center; gap:12px; position:relative; z-index:1; }
+.brand .logo{
+  height:44px; padding:5px 9px; border-radius:11px;
+  background:#fff;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 3px 10px rgba(0,0,0,.16);
+}
+.brand .logo img{ height:26px; width:auto; display:block; }
+.brand .name{ font-weight:700; font-size:17px; letter-spacing:1px; }
+.brand .sub{ font-size:12px; opacity:.84; font-weight:400; margin-top:1px; }
+.header h1{
+  margin:14px 0 0; font-size:19px; font-weight:600; letter-spacing:-.2px;
+}
+.header .desc{ font-size:13px; opacity:.85; margin-top:3px; font-weight:400; }
+
+/* ============================================================
+   การ์ดแต่ละกลุ่มข้อมูล
+   ============================================================ */
+.section{
+  background:var(--card);
+  margin:14px;
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  border:1px solid var(--line);
+  overflow:hidden;
+}
+.section-head{
+  display:flex; align-items:center; gap:9px;
+  padding:14px 16px 10px;
+}
+.section-head .num{
+  width:25px; height:25px; flex:none;
+  background:linear-gradient(135deg,#00BBF2,#0090C4); color:#fff;
+  border-radius:8px; font-size:12.5px; font-weight:700;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 2px 6px rgba(0,150,210,.30);
+}
+.section-head h2{ margin:0; font-size:15px; font-weight:700; letter-spacing:-.2px; }
+.section-body{ padding:4px 16px 16px; }
+
+/* ============================================================
+   ฟิลด์ฟอร์ม
+   ============================================================ */
+.field{ margin-top:14px; }
+.field:first-child{ margin-top:6px; }
+.field > label{
+  display:block; font-size:13px; font-weight:500;
+  color:var(--ink); margin-bottom:6px;
+}
+.field .req{ color:var(--loss); margin-left:2px; }
+.field .hint{ font-size:11.5px; color:var(--muted); font-weight:400; margin-left:4px; }
+
+input[type="text"], input[type="number"], input[type="month"], input[type="date"], select, textarea{
+  width:100%;
+  font-family:inherit; font-size:15px; color:var(--ink);
+  background:#fff;
+  border:1.5px solid var(--line);
+  border-radius:10px;
+  padding:12px 13px;
+  outline:none;
+  transition:border-color .15s, box-shadow .15s, background .15s;
+  -webkit-appearance:none; appearance:none;
+}
+input::placeholder, textarea::placeholder{ color:#A9B6C2; }
+input:focus, select:focus, textarea:focus{
+  border-color:var(--cpac-blue);
+  box-shadow:0 0 0 3px rgba(11,95,174,.12);
+  background:#fff;
+}
+textarea{ resize:vertical; min-height:76px; line-height:1.5; }
+
+/* dropdown มีลูกศรเอง */
+.select-wrap{ position:relative; }
+.select-wrap::after{
+  content:""; position:absolute; right:15px; top:50%;
+  width:9px; height:9px; margin-top:-6px;
+  border-right:2px solid var(--muted); border-bottom:2px solid var(--muted);
+  transform:rotate(45deg); pointer-events:none;
+}
+select{ padding-right:34px; }
+
+/* แถวสองช่องเรียงกัน */
+.row2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+/* กล่องช่องกรอกแบบมีหน่วยต่อท้าย (เช่น กม., %) */
+.with-unit{ position:relative; }
+.with-unit .unit{
+  position:absolute; right:13px; top:50%; transform:translateY(-50%);
+  font-size:13px; color:var(--muted); font-weight:500; pointer-events:none;
+}
+.with-unit input{ padding-right:46px; }
+
+/* ============================================================
+   ปุ่มสถานะ Win / Loss / Follow (segmented)
+   ============================================================ */
+.status-group{ display:grid; grid-template-columns:repeat(3,1fr); gap:9px; }
+.status-btn{
+  font-family:inherit; font-size:14.5px; font-weight:600;
+  padding:13px 6px; border-radius:11px; cursor:pointer;
+  background:#fff; color:var(--muted);
+  border:1.5px solid var(--line);
+  transition:all .15s; text-align:center;
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+}
+.status-btn .dot{
+  width:9px; height:9px; border-radius:50%; background:var(--line);
+  transition:all .15s;
+}
+.status-btn[data-v="Win"].active   { border-color:var(--win);    color:var(--win);    background:#ECF8F0; }
+.status-btn[data-v="Loss"].active  { border-color:var(--loss);   color:var(--loss);   background:#FDECEB; }
+.status-btn[data-v="Follow"].active{ border-color:var(--follow); color:var(--follow); background:#FEF4E5; }
+.status-btn[data-v="Win"].active .dot   { background:var(--win); }
+.status-btn[data-v="Loss"].active .dot  { background:var(--loss); }
+.status-btn[data-v="Follow"].active .dot{ background:var(--follow); }
+.status-btn.active{ box-shadow:0 2px 8px rgba(16,38,62,.08); }
+
+/* ============================================================
+   ตารางปริมาณคอนกรีตรายเดือน
+   ============================================================ */
+.months{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.month-cell label{
+  display:block; font-size:11.5px; font-weight:600; color:var(--muted);
+  text-transform:uppercase; letter-spacing:.4px; margin-bottom:4px; text-align:center;
+}
+.month-cell input{
+  text-align:center; padding:10px 6px; font-size:14px;
+}
+.month-cell input:not(:placeholder-shown){
+  border-color:var(--cpac-blue-line); background:var(--cpac-blue-soft);
+  font-weight:600;
+}
+.month-cell.locked{ opacity:.42; }
+.month-cell.locked input{ background:var(--bg); cursor:not-allowed; }
+.month-total{
+  margin-top:13px; padding:11px 14px; border-radius:10px;
+  background:var(--cpac-blue-soft); border:1px solid var(--cpac-blue-line);
+  display:flex; align-items:center; justify-content:space-between;
+}
+.month-total .lbl{ font-size:13px; font-weight:500; color:var(--cpac-blue-dark); }
+.month-total .val{ font-size:17px; font-weight:700; color:var(--cpac-blue); }
+.month-total .val small{ font-size:12px; font-weight:500; }
+
+/* ============================================================
+   ช่องเหตุผล (แสดงเฉพาะตอนเลือก Loss / Follow)
+   ============================================================ */
+.reason-wrap{
+  margin-top:14px; max-height:0; overflow:hidden;
+  opacity:0; transition:max-height .3s ease, opacity .25s ease, margin .3s ease;
+}
+.reason-wrap.show{ max-height:320px; opacity:1; }
+.chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; }
+.chip{
+  font-family:inherit; font-size:13px; font-weight:500;
+  padding:8px 13px; border-radius:20px; cursor:pointer;
+  background:#fff; color:var(--ink);
+  border:1.5px solid var(--line); transition:all .15s;
+}
+.chip.active{
+  background:var(--cpac-blue); color:#fff; border-color:var(--cpac-blue);
+}
+
+/* ============================================================
+   ปุ่มแนบแผนที่ / ตำแหน่ง
+   ============================================================ */
+.map-btn{
+  display:flex; align-items:center; gap:11px; width:100%;
+  padding:13px; border:1.5px dashed var(--cpac-blue-line); border-radius:11px;
+  background:var(--cpac-blue-soft); color:var(--cpac-blue-dark);
+  font-family:inherit; font-size:14px; font-weight:500; cursor:pointer;
+  transition:all .15s;
+}
+.map-btn:active{ background:#DCEBFA; }
+.map-btn .ic{ font-size:20px; line-height:1; }
+.map-btn .map-sub{ font-size:11.5px; color:var(--muted); font-weight:400; }
+
+/* แผนที่ปักหมุดเอง */
+.map-row{ display:flex; gap:8px; margin-top:9px; }
+.map-mini-btn{
+  flex:1; padding:11px; border:1.5px solid var(--cpac-blue-line); border-radius:10px;
+  background:var(--cpac-blue-soft); color:var(--cpac-blue-dark);
+  font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; transition:.15s;
+}
+.map-mini-btn:active{ background:#DCEBFA; }
+.pick-map{ height:230px; width:100%; margin-top:10px; border-radius:12px; overflow:hidden; border:1px solid var(--line); background:#E8EEF3; }
+.pick-map .leaflet-container{ font-family:inherit; background:#E8EEF3; }
+.pick-hint{ font-size:12px; color:var(--muted); margin-top:7px; }
+.add-comp-btn{ margin-top:10px; width:100%; padding:11px; border:1.5px dashed var(--cpac-blue-line); border-radius:10px; background:var(--cpac-blue-soft); color:var(--cpac-blue-dark); font-family:inherit; font-size:13px; font-weight:700; cursor:pointer; }
+.extra-comp-row{ margin-top:12px; padding:12px; border:1px solid var(--line); border-radius:10px; background:var(--bg); }
+.rm-comp-btn{ margin-top:8px; width:100%; padding:8px; border:none; border-radius:8px; background:var(--loss-soft); color:var(--loss); font-family:inherit; font-size:12.5px; font-weight:700; cursor:pointer; }
+
+/* แสดงตัวอย่างรูปที่แนบ */
+.photo-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin-top:11px; }
+.photo-grid:empty{ display:none; }
+.photo-thumb{
+  position:relative; aspect-ratio:1; border-radius:10px; overflow:hidden;
+  border:1px solid var(--line); background:var(--bg);
+}
+.photo-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+.photo-thumb .del{
+  position:absolute; top:4px; right:4px; width:22px; height:22px; border:none; cursor:pointer;
+  background:rgba(22,32,43,.72); color:#fff; border-radius:50%; font-size:13px; line-height:1;
+  display:flex; align-items:center; justify-content:center;
+}
+
+/* ============================================================
+   ปุ่มส่งข้อมูล (ติดล่าง)
+   ============================================================ */
+.footer{
+  position:fixed; bottom:0; left:0; right:0; z-index:30;
+  max-width:480px; margin:0 auto;
+  padding:12px 14px calc(12px + env(safe-area-inset-bottom));
+  background:rgba(255,255,255,.86);
+  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  border-top:1px solid var(--line);
+}
+.submit-btn{
+  width:100%; padding:15px; border:none; border-radius:13px;
+  background:linear-gradient(135deg, #00AEE0, #0090C4); color:#fff;
+  font-family:inherit; font-size:16px; font-weight:700; cursor:pointer;
+  box-shadow:0 6px 18px rgba(0,150,210,.34);
+  transition:transform .12s, filter .15s;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.submit-btn:active{ transform:scale(.98); filter:brightness(.92); }
+
+/* ============================================================
+   หน้าจอ "ส่งสำเร็จ"
+   ============================================================ */
+.toast{
+  position:fixed; left:50%; bottom:92px; transform:translateX(-50%) translateY(20px);
+  background:var(--ink); color:#fff; padding:12px 20px; border-radius:30px;
+  font-size:14px; font-weight:500; opacity:0; pointer-events:none;
+  transition:all .3s; z-index:40; box-shadow:0 8px 24px rgba(0,0,0,.25);
+  display:flex; align-items:center; gap:8px; white-space:nowrap;
+}
+.toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+.toast .check{ color:#5BE38C; font-weight:700; }
+</style>
+</head>
+
+<body>
+<div class="app">
+
+  <!-- ===================== หัวฟอร์ม ===================== -->
+  <header class="header">
+    <div class="brand">
+      <div class="logo">
+        <!-- โลโก้ CPAC จริง -->
+        <img src="cpac-logo.png" alt="CPAC" />
+      </div>
+      <div>
+        <div class="name">CPAC</div>
+        <div class="sub">ระบบบันทึกงานขายคอนกรีต</div>
+      </div>
+    </div>
+    <h1>บันทึกข้อมูลหน่วยงาน</h1>
+    <div class="desc">กรอกข้อมูลให้ครบถ้วน แล้วกดส่งด้านล่าง</div>
+    <div style="position:absolute;top:18px;right:20px;z-index:5;display:flex;align-items:center;gap:8px;">
+      <a href="CPAC Staff Portal.html" style="display:flex;align-items:center;gap:5px;white-space:nowrap;background:rgba(255,255,255,.16);color:#fff;text-decoration:none;font-size:12.5px;font-weight:700;padding:7px 12px;border-radius:9px;" title="กลับหน้าหลัก">‹ หน้าหลัก</a>
+      <button type="button" id="newSiteBtn" style="display:flex;align-items:center;gap:5px;white-space:nowrap;background:#fff;color:var(--cpac-blue-dark);border:none;cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:700;padding:7px 12px;border-radius:9px;box-shadow:0 2px 6px rgba(0,0,0,.12);">+ เพิ่มหน่วยงาน</button>
+    </div>
+  </header>
+
+  <form id="salesForm" autocomplete="off">
+
+    <!-- ===================== 1. ข้อมูลพื้นที่ ===================== -->
+    <div class="section">
+      <div class="section-head">
+        <span class="num">1</span>
+        <h2>ข้อมูลพื้นที่จัดส่ง</h2>
+      </div>
+      <div class="section-body">
+
+        <div class="field">
+          <label>Metro <span class="req">*</span></label>
+          <div class="select-wrap">
+            <select name="metro" id="metroSelect" required>
+              <option value="" disabled selected>เลือก Metro</option>
+              <!-- 👇 เพิ่ม / แก้ Metro ได้ที่นี่ (ต้องตรงกับชื่อใน CLUSTERS ด้านล่าง) -->
+              <option>Metro 1</option>
+              <option>Metro 2</option>
+              <option>Metro 3</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Cluster <span class="req">*</span> <span class="hint">(เลือก Metro ก่อน)</span></label>
+          <div class="select-wrap">
+            <select name="cluster" id="clusterSelect" required disabled>
+              <option value="" disabled selected>เลือก Metro ก่อน</option>
+              <!-- 👇 รายการ Cluster จะเปลี่ยนตาม Metro อัตโนมัติ (แก้ที่ตัวแปร CLUSTERS ใน JavaScript ด้านล่าง) -->
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>โรงงานจัดส่ง <span class="req">*</span> <span class="hint">(เลือก Cluster ก่อน)</span></label>
+          <div class="select-wrap">
+            <select name="plant" id="plantSelect" required disabled>
+              <option value="" disabled selected>เลือก Cluster ก่อน</option>
+              <!-- 👇 รายการโรงงานจะเปลี่ยนตาม Cluster อัตโนมัติ (แก้ที่ตัวแปร PLANTS ใน JavaScript ด้านล่าง) -->
+            </select>
+          </div>
+        </div>
+
+        <div class="row2">
+          <div class="field">
+            <label>ระยะจัดส่ง</label>
+            <div class="with-unit">
+              <input type="number" name="distance" inputmode="decimal" placeholder="0" min="0" step="0.1" />
+            </div>
+          </div>
+          <div class="field">
+            <label>Site code</label>
+            <input type="text" name="sitecode" placeholder="เช่น S-1024" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>หน่วยงาน <span class="req">*</span></label>
+          <input type="text" name="site" placeholder="ชื่อโครงการ / หน่วยงาน" required />
+        </div>
+
+        <div class="row2">
+          <div class="field">
+          <label>ผรม. (ผู้รับเหมา)</label>
+            <input type="text" name="contractor" placeholder="ชื่อผู้รับเหมา" />
+          </div>
+          <div class="field">
+            <label>เบอร์ติดต่อลูกค้า</label>
+            <input type="text" name="customer_phone" inputmode="tel" placeholder="เช่น 08x-xxx-xxxx" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>ปริมาณคอนกรีตทั้งโครงการ</label>
+          <div class="with-unit">
+            <input type="number" name="project_vol" inputmode="decimal" placeholder="0" min="0" step="1" />
+            <span class="unit">ลบ.ม.</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>รายละเอียดโครงการ</label>
+          <textarea name="project_detail" placeholder="ประเภทงาน / ขนาดโครงการ / ข้อมูลโครงการ..."></textarea>
+        </div>
+
+        <div class="field">
+          <label>รายละเอียดเพิ่มเติม</label>
+          <textarea name="extra_detail" placeholder="หมายเหตุ / เงื่อนไข / ข้อตกลงพิเศษ / สิ่งที่ต้องติดตาม..."></textarea>
+        </div>
+
+        <div class="row2">
+          <div class="field">
+            <label>คาดว่าจะใช้งาน</label>
+            <div class="select-wrap">
+              <select name="expected_use" id="expectedUse">
+                <option value="" disabled selected>เลือกเดือน/ปี</option>
+                <!-- ตัวเลือกเดือน+ปี สร้างอัตโนมัติด้วย JavaScript ด้านล่าง -->
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label>วันที่ทราบข้อมูล</label>
+            <input type="date" name="known_date" id="knownDate" />
+          </div>
+          <div class="field">
+            <label>ผู้รับผิดชอบ</label>
+            <input type="text" name="owner" placeholder="ชื่อ Sales / ผู้ดูแล" />
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ===================== 2. ปริมาณคอนกรีตรายเดือน ===================== -->
+    <div class="section">
+      <div class="section-head">
+        <span class="num">2</span>
+        <h2>ปริมาณคอนกรีตเทต่อเดือน <span class="hint">(ลบ.ม.)</span></h2>
+      </div>
+      <div class="section-body">
+        <div class="months" id="months">
+          <!-- 12 เดือน สร้างอัตโนมัติด้วย JavaScript ด้านล่าง -->
+        </div>
+        <div class="month-total">
+          <span class="lbl">รวมทั้งปี</span>
+          <span class="val"><span id="totalVol">0</span> <small>ลบ.ม.</small></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== 3. สถานะงาน ===================== -->
+    <div class="section">
+      <div class="section-head">
+        <span class="num">3</span>
+        <h2>สถานะงาน <span class="req">*</span></h2>
+      </div>
+      <div class="section-body">
+        <div class="status-group">
+          <button type="button" class="status-btn" data-v="Win"><span class="dot"></span>Win</button>
+          <button type="button" class="status-btn" data-v="Loss"><span class="dot"></span>Loss</button>
+          <button type="button" class="status-btn" data-v="Follow"><span class="dot"></span>Follow</button>
+        </div>
+        <input type="hidden" name="status" id="statusInput" required />
+
+        <!-- ช่องเหตุผล: แสดงเมื่อเลือก Loss หรือ Follow -->
+        <div class="reason-wrap" id="reasonWrap">
+          <div class="field" style="margin-top:0;">
+            <label id="reasonLabel">สาเหตุที่ขายไม่ได้</label>
+            <div class="chips" id="reasonChips">
+              <!-- 👇 เพิ่ม / แก้ สาเหตุ ได้ที่นี่ -->
+              <span class="chip" data-v="ราคา">ราคา</span>
+              <span class="chip" data-v="เครดิต">เครดิต</span>
+              <span class="chip" data-v="มีเจ้าประจำ">มีเจ้าประจำ</span>
+              <span class="chip" data-v="ระยะทาง">ระยะทาง</span>
+              <span class="chip" data-v="คุณภาพ">คุณภาพ</span>
+              <span class="chip" data-v="อื่นๆ">อื่นๆ</span>
+            </div>
+            <input type="text" id="reasonOther" placeholder="ระบุสาเหตุเพิ่มเติม..." style="display:none; margin-top:10px;" />
+            <input type="hidden" name="reason" id="reasonInput" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== 4. การแข่งขัน ===================== -->
+    <div class="section">
+      <div class="section-head">
+        <span class="num">4</span>
+        <h2>การแข่งขัน</h2>
+      </div>
+      <div class="section-body">
+        <div class="row2">
+          <div class="field">
+            <label>ส่วนลดซีแพค</label>
+            <div class="with-unit">
+              <input type="number" name="discount" inputmode="decimal" placeholder="0" min="0" max="100" step="0.5" />
+              <span class="unit">%</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>ส่วนลดคู่แข่ง</label>
+            <div class="with-unit">
+              <input type="number" name="competitor_discount" inputmode="decimal" placeholder="0" min="0" max="100" step="0.5" />
+              <span class="unit">%</span>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label>คู่แข่ง (ถึง ผรม.)</label>
+          <div class="select-wrap">
+            <select name="competitor" id="competitorSelect">
+              <option value="" disabled selected>เลือกคู่แข่ง</option>
+              <!-- 👇 เพิ่ม / แก้ คู่แข่ง ได้ที่นี่ -->
+              <option>INSEE</option>
+              <option>น่ำเฮง</option>
+              <option>TPI</option>
+              <option>M</option>
+              <option>Q-Mix</option>
+              <option>ORC</option>
+              <option>เอกชนรายย่อย</option>
+              <option>ไม่มีคู่แข่ง</option>
+              <option value="__other__">➕ อื่นๆ (พิมพ์เอง)</option>
+            </select>
+          </div>
+          <input type="text" name="competitor_other" id="competitorOther" placeholder="พิมพ์ชื่อคู่แข่ง" style="display:none;margin-top:9px;" />
+          <div id="extraCompetitors"></div>
+          <button type="button" id="addCompBtn" class="add-comp-btn">+ เพิ่มคู่แข่งอีกเจ้า</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== 5. ตำแหน่ง & รายละเอียด ===================== -->
+    <div class="section">
+      <div class="section-head">
+        <span class="num">5</span>
+        <h2>ตำแหน่ง &amp; รายละเอียด</h2>
+      </div>
+      <div class="section-body">
+        <div class="field">
+          <label>แผนที่หน่วยงาน <span class="hint">(แตะบนแผนที่เพื่อปักหมุด หรือวางพิกัด)</span></label>
+          <input type="text" name="maplink" inputmode="text" placeholder="วางพิกัด เช่น 13°46'32.4&quot;N 100°31'39.2&quot;E หรือ 13.7757, 100.5275" />
+          <input type="hidden" name="lat" />
+          <input type="hidden" name="lng" />
+          <div class="map-row">
+            <button type="button" class="map-mini-btn" id="applyCoordBtn">✓ ใช้พิกัดนี้</button>
+            <button type="button" class="map-mini-btn" id="locBtn">📍 ตำแหน่งปัจจุบัน</button>
+          </div>
+          <div id="pickMap" class="pick-map"></div>
+          <div class="pick-hint" id="pickHint">ยังไม่ได้ปักหมุด — แตะบนแผนที่เพื่อเลือกตำแหน่ง</div>
+        </div>
+        <div class="field">
+          <label>รูปภาพหน่วยงาน <span class="hint">(ถ่าย / เลือกจากเครื่อง · ได้หลายรูป)</span></label>
+          <input type="file" id="photoInput" name="photos" accept="image/*" multiple capture="environment" hidden />
+          <button type="button" class="map-btn" id="photoBtn">
+            <span class="ic">📷</span>
+            <div style="text-align:left;">
+              <div>แนบรูปภาพ</div>
+              <div class="map-sub">แตะเพื่อถ่ายรูป หรือเลือกจากอัลบั้ม</div>
+            </div>
+          </button>
+          <div class="photo-grid" id="photoGrid"></div>
+        </div>
+      </div>
+    </div>
+
+  </form>
+
+  <!-- ===================== ปุ่มส่ง ===================== -->
+  <div class="footer" id="mainFooter">
+    <button type="submit" form="salesForm" class="submit-btn" id="submitBtn">
+      <span>ส่งข้อมูล</span>
+    </button>
+  </div>
+
+  <!-- แจ้งเตือนส่งสำเร็จ -->
+  <div class="toast" id="toast"><span class="check">✓</span> บันทึกข้อมูลเรียบร้อย</div>
+
+</div>
+
+<script src="cpac-app.js"></script>
+<script>
+/* ---- กั้นหน้า: ต้องล็อกอินเป็นพนักงานขายก่อน ---- */
+const SESS = CPAC.requireRole('staff', 'CPAC Staff Login.html');
+/* เติมชื่อผู้รับผิดชอบให้อัตโนมัติ */
+if(SESS){ const ow=document.querySelector('[name="owner"]'); if(ow && !ow.value) ow.value = SESS.name; }
+
+/* ============================================================
+   0) Metro -> Cluster  (เลือก Metro แล้ว Cluster จะเปลี่ยนตาม)
+   👇 แก้ / เพิ่ม Cluster ของแต่ละ Metro ได้ที่นี่เลย
+   ============================================================ */
+const CLUSTERS = {
+  'Metro 1': ['บางซื่อ', 'พระราม 4', 'พระราม 9'],
+  'Metro 2': ['รังสิต', 'รามอินทรา', 'บางบัวทอง'],
+  'Metro 3': ['บางนา', 'พระราม 2', 'สุวรรณภูมิ'],
+};
+const metroSelect   = document.getElementById('metroSelect');
+const clusterSelect = document.getElementById('clusterSelect');
+const plantSelect   = document.getElementById('plantSelect');
+
+metroSelect.addEventListener('change', ()=>{
+  const list = CLUSTERS[metroSelect.value] || [];
+  clusterSelect.innerHTML =
+    '<option value="" disabled selected>เลือก Cluster</option>' +
+    list.map(c=>`<option>${c}</option>`).join('');
+  clusterSelect.disabled = false;
+  /* รีเซ็ตโรงงานเมื่อเปลี่ยน Metro */
+  plantSelect.innerHTML = '<option value="" disabled selected>เลือก Cluster ก่อน</option>';
+  plantSelect.disabled = true;
+});
+
+/* ============================================================
+   0.1) Cluster -> โรงงานจัดส่ง  (เลือก Cluster แล้วโรงงานจะเปลี่ยนตาม)
+   👇 แก้ / เพิ่ม รายชื่อโรงงานของแต่ละ Cluster ได้ที่นี่เลย
+   ============================================================ */
+const PLANTS = {
+  /* ----- Metro 1 ----- */
+  'บางซื่อ':   ['ตลิ่งชัน','ตลิ่งชัน 3','บางซ่อน','บางซ่อน 3','บางซ่อน 4','บางซ่อน 5','บางศรีเมือง','พระราม 5','มหาสวัสดิ์ 2','รัชวิภา','รัชวิภา 2'],
+  'พระราม 4':  ['คาราบาว','บ่อนไก่','บ่อนไก่ 3','บางโคล่','พระราม 4/2','พระราม 4/3','พระราม 4/4','พระราม 4/5'],
+  'พระราม 9':  ['AIA รัชดา','คลองตัน 2','คลองตัน 3','ทับช้าง','บางจาก','บางจาก 2','พระราม 9/2','พระราม 9/5','สุขุมวิท 103'],
+  /* ----- Metro 2 ----- */
+  'บางบัวทอง': ['FC นพวงศ์','แคราย 2','ไทรน้อย','ชัยพฤกษ์','บางบัวทอง','บางหลวง','ปากเกร็ด','รัตนาธิเบศร์','ลาดหลุมแก้ว','สามโคก'],
+  'รังสิต':    ['เชียงรากใหญ่','คลอง 1','คลอง 7','คลอง 9','คลองหลวง','ดอนเมือง','นวนคร 4','ปทุมธานี 2','รังสิต'],
+  'รามอินทรา': ['เทพรักษ์ (TG)','ฉลองกรุง','นวมินทร์ 2','บางเขน (TG)','มีนบุรี','รามอินทรา 2','ลาดปลาเค้า','สายไหม','สายไหม 2','หนองจอก','หลักสี่'],
+  /* ----- Metro 3 ----- */
+  'บางนา':     ['Forestias 3','แพรกษา','แพรกษา 2','บางนา กม.4','บางนา กม.4/2','บางนา กม.5','บางนา กม.8-ราม','บางปู','บางปู (TG)','ปากน้ำ','พระนครใต้ 3','พระประแดง'],
+  'พระราม 2':  ['เอกชัย','กัลปพฤกษ์','ท่าพระ','บางแค','บางขุนเทียน 2','บางปลากด 3','บางมด','ราษฎร์บูรณะ 2','ราษฎร์บูรณะ 4','สะแกงาม 2','สุขสวัสดิ์'],
+  'สุวรรณภูมิ': ['FC คลองด่าน','FC หลวงแพ่ง','เปรง','กิ่งแก้ว','บางนา กม.23','บางนา กม.35 (TG)','บางบ่อ','บางปลา 3','บางพลี 2','ร่มเกล้า','ลาดกระบัง'],
+};
+clusterSelect.addEventListener('change', ()=>{
+  const list = PLANTS[clusterSelect.value] || [];
+  plantSelect.innerHTML =
+    '<option value="" disabled selected>เลือกโรงงาน</option>' +
+    list.map(p=>`<option>${p}</option>`).join('');
+  plantSelect.disabled = false;
+});
+
+const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+const monthsBox = document.getElementById('months');
+
+/* ช่อง "คาดว่าจะใช้งาน" — รวมเดือน+ปี เป็นช่องเดียว
+   👇 แก้ช่วงปีได้ที่ตัวแปร YEARS ด้านล่าง */
+const TH_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const YEARS = [2026, 2027, 2028];
+const expSel = document.getElementById('expectedUse');
+/* ตั้งค่าเริ่มต้น "วันที่ทราบข้อมูล" เป็นวันนี้ */
+const knownDateEl = document.getElementById('knownDate');
+if(knownDateEl) knownDateEl.value = new Date().toISOString().slice(0,10);
+YEARS.forEach(y=>{
+  TH_MONTHS.forEach((m,i)=>{
+    const opt = document.createElement('option');
+    opt.value = `${y}-${String(i+1).padStart(2,'0')}`;
+    opt.textContent = `${m} ${y}`;
+    expSel.appendChild(opt);
+  });
+});
+MONTHS.forEach((m,i)=>{
+  const cell = document.createElement('div');
+  cell.className = 'month-cell';
+  cell.dataset.mi = i;
+  cell.innerHTML = `<label>${m}</label>
+    <input type="number" inputmode="decimal" name="vol_${m}" placeholder="0" min="0" step="1" />`;
+  monthsBox.appendChild(cell);
+});
+
+/* ล็อกเดือนก่อน "คาดว่าจะเริ่มใช้" — ให้กรอกปริมาณเริ่มจากเดือนที่เริ่มใช้งาน */
+function lockMonthsBeforeStart(){
+  const v = expSel.value;                 /* รูปแบบ YYYY-MM */
+  const startMi = /^\d{4}-\d{2}$/.test(v) ? (parseInt(v.split('-')[1],10)-1) : -1;
+  monthsBox.querySelectorAll('.month-cell').forEach(cell=>{
+    const mi = Number(cell.dataset.mi);
+    const lock = startMi>=0 && mi<startMi;
+    cell.classList.toggle('locked', lock);
+    const inp = cell.querySelector('input');
+    inp.disabled = lock;
+    if(lock){ inp.value=''; }
+  });
+  monthsBox.dispatchEvent(new Event('input'));
+}
+expSel.addEventListener('change', lockMonthsBeforeStart);
+
+/* รวมยอดรายเดือน -> แสดงผลรวมทั้งปี */
+const totalEl = document.getElementById('totalVol');
+monthsBox.addEventListener('input', ()=>{
+  let sum = 0;
+  monthsBox.querySelectorAll('input').forEach(i=> sum += Number(i.value)||0 );
+  totalEl.textContent = sum.toLocaleString('th-TH');
+});
+
+/* ============================================================
+   2) ปุ่มสถานะ Win / Loss / Follow
+   ============================================================ */
+const statusInput = document.getElementById('statusInput');
+const reasonWrap  = document.getElementById('reasonWrap');
+/* คู่แข่ง: เลือก "อื่นๆ" แล้วโผล่ช่องพิมพ์เอง */
+document.getElementById('competitorSelect').addEventListener('change', e=>{
+  document.getElementById('competitorOther').style.display = e.target.value==='__other__' ? 'block' : 'none';
+});
+
+/* เพิ่มคู่แข่งอีกเจ้า — เพิ่มชื่อ + ส่วนลด ได้หลายเจ้า */
+const extraCompWrap = document.getElementById('extraCompetitors');
+const COMP_OPTS = ['INSEE','น่ำเฮง','TPI','M','Q-Mix','ORC','เอกชนรายย่อย'];
+let extraCompCount = 0;
+document.getElementById('addCompBtn').addEventListener('click', ()=>{
+  extraCompCount++;
+  const idx = extraCompCount;
+  const row = document.createElement('div');
+  row.className = 'extra-comp-row';
+  row.innerHTML = `
+    <div class="select-wrap">
+      <select name="competitor_extra_${idx}">
+        <option value="" disabled selected>เลือกคู่แข่ง</option>
+        ${COMP_OPTS.map(o=>`<option>${o}</option>`).join('')}
+        <option value="__other__">➕ อื่นๆ (พิมพ์เอง)</option>
+      </select>
+    </div>
+    <input type="text" name="competitor_extra_other_${idx}" placeholder="พิมพ์ชื่อคู่แข่ง" style="display:none;margin-top:8px;" />
+    <div class="with-unit" style="margin-top:8px;">
+      <input type="number" name="competitor_extra_disc_${idx}" inputmode="decimal" placeholder="ส่วนลด 0" min="0" max="100" step="0.5" />
+      <span class="unit">%</span>
+    </div>
+    <button type="button" class="rm-comp-btn">✕ ลบคู่แข่งนี้</button>`;
+  extraCompWrap.appendChild(row);
+  row.querySelector('select').addEventListener('change', e=>{
+    row.querySelector(`[name="competitor_extra_other_${idx}"]`).style.display = e.target.value==='__other__' ? 'block' : 'none';
+  });
+  row.querySelector('.rm-comp-btn').addEventListener('click', ()=> row.remove());
+});
+document.querySelectorAll('.status-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.status-btn').forEach(b=> b.classList.remove('active'));
+    btn.classList.add('active');
+    statusInput.value = btn.dataset.v;
+    /* แสดงช่อง "สาเหตุที่ขายไม่ได้" เฉพาะ Loss / Follow */
+    if(btn.dataset.v === 'Win'){ reasonWrap.classList.remove('show'); }
+    else {
+      reasonWrap.classList.add('show');
+      /* เปลี่ยนข้อความ label ตามสถานะ */
+      document.getElementById('reasonLabel').textContent =
+        btn.dataset.v === 'Follow' ? 'สาเหตุที่ Follow' : 'สาเหตุที่ขายไม่ได้';
+    }
+  });
+});
+
+/* ============================================================
+   3) เลือกสาเหตุ (chips)
+   ============================================================ */
+const reasonInput = document.getElementById('reasonInput');
+const reasonOther = document.getElementById('reasonOther');
+/* รวมค่าสาเหตุ: ชิปที่เลือก + ข้อความในช่อง "อื่นๆ" */
+function syncReason(){
+  const picked = [...document.querySelectorAll('#reasonChips .chip.active')].map(c=>c.dataset.v);
+  const otherOn = picked.includes('อื่นๆ');
+  reasonOther.style.display = otherOn ? 'block' : 'none';
+  if(!otherOn) reasonOther.value = '';
+  const list = picked.filter(v=>v!=='อื่นๆ');
+  const txt = reasonOther.value.trim();
+  if(otherOn && txt) list.push(txt);
+  else if(otherOn) list.push('อื่นๆ');
+  reasonInput.value = list.join(', ');
+}
+document.querySelectorAll('#reasonChips .chip').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    chip.classList.toggle('active');
+    syncReason();
+  });
+});
+document.getElementById('reasonOther').addEventListener('input', syncReason);
+
+/* ============================================================
+   4) แผนที่ปักหมุดเอง (Leaflet) + วางพิกัด + GPS -> เก็บ lat/lng ตรงๆ
+   ============================================================ */
+(function(){
+  const mapInput = document.querySelector('[name="maplink"]');
+  const latIn = document.querySelector('[name="lat"]');
+  const lngIn = document.querySelector('[name="lng"]');
+  const hint = document.getElementById('pickHint');
+  let pmap=null, marker=null;
+
+  function initMap(){
+    if(pmap || typeof L==='undefined') return;
+    pmap = L.map('pickMap', { scrollWheelZoom:false }).setView([13.7757,100.5275], 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'© OpenStreetMap' }).addTo(pmap);
+    pmap.on('click', e=> setPin(e.latlng.lat, e.latlng.lng, true));
+    setTimeout(()=>pmap.invalidateSize(), 200);
+  }
+  function setPin(la, lo, fly){
+    if(!pmap) initMap();
+    if(!marker){ marker = L.marker([la,lo], { draggable:true }).addTo(pmap);
+      marker.on('dragend', ()=>{ const p=marker.getLatLng(); writeCoord(p.lat,p.lng); }); }
+    else marker.setLatLng([la,lo]);
+    if(fly) pmap.setView([la,lo], Math.max(pmap.getZoom(),15));
+    writeCoord(la,lo);
+  }
+  function writeCoord(la,lo){
+    latIn.value=la.toFixed(6); lngIn.value=lo.toFixed(6);
+    mapInput.value=`https://www.google.com/maps?q=${la.toFixed(6)},${lo.toFixed(6)}`;
+    hint.textContent=`✓ ปักหมุดแล้ว: ${la.toFixed(5)}, ${lo.toFixed(5)}`;
+    hint.classList.add('ok');
+  }
+  initMap();
+
+  /* ปุ่ม: ใช้พิกัดที่วางในช่อง */
+  document.getElementById('applyCoordBtn').addEventListener('click', ()=>{
+    const ll = CPAC.parseLatLng(mapInput.value);
+    if(ll){ setPin(ll[0], ll[1], true); }
+    else { hint.textContent='อ่านพิกัดไม่ได้ — ลองวางแบบ 13.7757, 100.5275'; hint.classList.remove('ok'); }
+  });
+  /* วางแล้วกด Enter ก็ใช้ได้ */
+  mapInput.addEventListener('change', ()=>{ const ll=CPAC.parseLatLng(mapInput.value); if(ll) setPin(ll[0],ll[1],true); });
+
+  /* ปุ่ม: GPS ตำแหน่งปัจจุบัน */
+  document.getElementById('locBtn').addEventListener('click', ()=>{
+    if(!navigator.geolocation){ alert('อุปกรณ์ไม่รองรับการระบุตำแหน่ง'); return; }
+    hint.textContent='กำลังค้นหาตำแหน่ง...'; hint.classList.remove('ok');
+    navigator.geolocation.getCurrentPosition(
+      pos=> setPin(pos.coords.latitude, pos.coords.longitude, true),
+      ()=>{ hint.textContent='ไม่สามารถดึงตำแหน่งได้'; }
+    );
+  });
+})();
+
+/* ============================================================
+   4.1) แนบรูปภาพ + แสดงตัวอย่าง + ลบรูปได้
+   ============================================================ */
+const photoInput = document.getElementById('photoInput');
+const photoGrid  = document.getElementById('photoGrid');
+let photoFiles = [];   /* เก็บรายการรูปที่แนบ */
+let photoData  = [];   /* dataURL ย่อขนาด — เก็บลงข้อมูลจริง */
+
+document.getElementById('photoBtn').addEventListener('click', ()=> photoInput.click());
+
+photoInput.addEventListener('change', ()=>{
+  [...photoInput.files].forEach(async f=>{
+    if(!f.type.startsWith('image/')) return;
+    photoFiles.push(f);
+    const url = URL.createObjectURL(f);
+    const idx = photoFiles.length - 1;
+    CPAC.fileToThumb(f).then(d=>{ photoData[idx] = d; });   /* ย่อเก็บไว้แสดงภายหลัง */
+    const div = document.createElement('div');
+    div.className = 'photo-thumb';
+    div.dataset.idx = idx;
+    div.innerHTML = `<img src="${url}" alt="" />
+      <button type="button" class="del" title="ลบรูป">✕</button>`;
+    div.querySelector('.del').addEventListener('click', ()=>{
+      photoFiles[idx] = null; photoData[idx] = null;
+      URL.revokeObjectURL(url);
+      div.remove();
+    });
+    photoGrid.appendChild(div);
+  });
+  photoInput.value = '';   /* ให้เลือกไฟล์เดิมซ้ำได้ */
+});
+
+/* ============================================================
+   5) ส่งฟอร์ม
+   ============================================================ */
+const form  = document.getElementById('salesForm');
+const toast = document.getElementById('toast');
+form.addEventListener('submit', e=>{
+  e.preventDefault();
+
+  /* ตรวจสถานะว่าเลือกหรือยัง */
+  if(!statusInput.value){
+    alert('กรุณาเลือกสถานะงาน (Win / Loss / Follow)');
+    document.querySelector('.status-group').scrollIntoView({block:'center'});
+    return;
+  }
+
+  /* รวบรวมข้อมูลทั้งหมดเป็น object */
+  const data = Object.fromEntries(new FormData(form).entries());
+  data.photoCount = photoFiles.filter(Boolean).length;   /* จำนวนรูปที่แนบ */
+  console.log('ข้อมูลที่กรอก:', data);   /* 👈 ดูข้อมูลได้ใน Console (F12) */
+
+  /* ---- จุดเชื่อมต่อ Airtable / Make.com ----
+     ตรงนี้คือที่ส่งข้อมูลออกไปจริงๆ ในอนาคต เช่น:
+     fetch('URL ของ Make.com', { method:'POST', body: JSON.stringify(data) });
+  --------------------------------------------- */
+
+  /* รวมยอดคอนกรีตทั้งปีจากช่องรายเดือน */
+  let volSum = 0;
+  document.querySelectorAll('#months input').forEach(i=> volSum += Number(i.value)||0 );
+
+  /* แปลงข้อมูลฟอร์มเป็นรูปแบบที่ตาราง Dashboard ใช้ แล้วเก็บไว้ในเครื่อง (localStorage)
+     เพื่อให้ข้อมูลที่กรอกไปโผล่ในหน้า Dashboard จริง */
+  const record = {
+    site: data.site || '(ไม่ระบุชื่อ)',
+    code: data.sitecode || '-',
+    metro: data.metro || '-',
+    cluster: data.cluster || '-',
+    plant: data.plant || '-',
+    dist: Number(data.distance) || 0,
+    vol: volSum,
+    status: data.status,
+    competitor: (data.competitor === '__other__' ? (data.competitor_other || '').trim() : data.competitor) || '',
+    reason: data.reason || '',
+    disc: Number(data.discount) || 0,
+    cdisc: Number(data.competitor_discount) || 0,
+    competitorsExtra: (function(){
+      const out = [];
+      for(let i=1;i<=extraCompCount;i++){
+        const raw = data['competitor_extra_'+i];
+        if(!raw) continue;
+        const nm = raw==='__other__' ? (data['competitor_extra_other_'+i]||'').trim() : raw;
+        if(!nm) continue;
+        out.push({ name:nm, disc:Number(data['competitor_extra_disc_'+i])||0 });
+      }
+      return out;
+    })(),
+    start: data.expected_use || '',
+    map: data.maplink ? 1 : 0,
+    mapUrl: data.maplink || '',
+    lat: data.lat ? Number(data.lat) : null,
+    lng: data.lng ? Number(data.lng) : null,
+    photos: photoData.filter(Boolean),
+    knownDate: data.known_date || '',
+    contractor: data.contractor || '',
+    customerPhone: data.customer_phone || '',
+    projectVol: Number(data.project_vol) || 0,
+    projectDetail: data.project_detail || '',
+    detail: data.extra_detail || '',
+    user: SESS ? SESS.username : '',
+    owner: (SESS ? SESS.name : '') || data.owner || '',
+    ts: Date.now()
+  };
+  /* เก็บปริมาณรายเดือนไว้ด้วย (vol_JAN..vol_DEC) เพื่อแสดงกราฟในหน้ารายละเอียด */
+  MONTHS.forEach(m=>{ const v = Number(data['vol_'+m])||0; if(v) record['vol_'+m] = v; });
+  try{
+    const key = 'cpac_entries';
+    const arr = JSON.parse(localStorage.getItem(key) || '[]');
+    arr.push(record);
+    localStorage.setItem(key, JSON.stringify(arr));
+  }catch(err){ console.warn('บันทึกข้อมูลในเครื่องไม่สำเร็จ', err); }
+  /* ส่งขึ้น Google Sheet (ถ้าตั้งค่า endpoint ไว้) */
+  try{ CPAC.pushToSheet(record); }catch(e){}
+
+  /* แสดงแจ้งเตือนสำเร็จ แล้วเด้งไปหน้า Dashboard */
+  toast.innerHTML = '<span class="check">✓</span> บันทึกแล้ว · กำลังไปหน้างานของฉัน...';
+  toast.classList.add('show');
+  setTimeout(()=>{ window.location.href = 'CPAC My Sites.html'; }, 1100);
+});
+
+/* ============================================================
+   ปุ่ม "เพิ่มหน่วยงาน" — ล้างฟอร์มเพื่อกรอกหน่วยงานใหม่
+   ============================================================ */
+function clearForm(){
+  form.reset();
+  totalEl.textContent = '0';
+  statusInput.value = '';
+  reasonInput.value = '';
+  reasonOther.value = ''; reasonOther.style.display = 'none';
+  document.querySelectorAll('.status-btn, .chip').forEach(el=> el.classList.remove('active'));
+  reasonWrap.classList.remove('show');
+  /* รีเซ็ตช่องที่ผูกกันให้กลับเป็นค่าเริ่มต้น */
+  clusterSelect.innerHTML = '<option value="" disabled selected>เลือก Metro ก่อน</option>';
+  clusterSelect.disabled = true;
+  plantSelect.innerHTML = '<option value="" disabled selected>เลือก Cluster ก่อน</option>';
+  plantSelect.disabled = true;
+  /* ล้างรูปที่แนบ */
+  photoFiles = [];
+  photoData = [];
+  photoGrid.innerHTML = '';
+  window.scrollTo({ top:0, behavior:'smooth' });
+  /* แจ้งเตือนสั้นๆ ว่าเริ่มหน่วยงานใหม่แล้ว */
+  toast.querySelector('span:last-child') || null;
+  toast.innerHTML = '<span class="check">✓</span> เริ่มกรอกหน่วยงานใหม่';
+  toast.classList.add('show');
+  setTimeout(()=>{ toast.classList.remove('show'); }, 1800);
+  /* โฟกัสช่องแรก (Metro) ให้เริ่มกรอกได้ทันที */
+  setTimeout(()=> metroSelect.focus(), 400);
+}
+document.getElementById('newSiteBtn').addEventListener('click', clearForm);
+</script>
+</body>
+</html>
