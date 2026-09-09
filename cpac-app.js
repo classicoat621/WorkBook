@@ -42,6 +42,8 @@ window.CPAC = (function(){
     'แผนที่หน่วยงาน'         : e => e.mapUrl || '',
     'รูปภาพหน่วยงาน'         : e => '',   /* เติมทีหลังจากผลอัปโหลดขึ้น Drive (ดู pushToSheet) */
     'สาเหตุที่ขายไม่ได้'      : e => e.reason || '',
+    'ผรม. (ผู้รับเหมา)'       : e => e.contractor || '',
+    'เบอร์ติดต่อลูกค้า'       : e => e.customerPhone || '',
   };
 
   /* แม็พย้อนกลับ: หัวคอลัมน์ในชีต  →  ชื่อฟิลด์ภายใน (สำหรับอ่านกลับเข้ามาเป็น entry) */
@@ -55,7 +57,7 @@ window.CPAC = (function(){
     'ระยะจัดส่ง':'dist', 'ส่วนลด CPAC':'disc', 'ส่วนลดคู่แข่ง':'cdisc', 'คู่แข่ง (ถึง ผรม.)':'competitor',
     'คาดว่าจะใช้งาน':'start', 'วันที่ทราบข้อมูล':'knownDate', 'รายละเอียดโครงการ':'projectDetail',
     'รายละเอียดเพิ่มเติม':'detail', 'แผนที่หน่วยงาน':'mapUrl', 'รูปภาพหน่วยงาน':'photosRaw',
-    'สาเหตุที่ขายไม่ได้':'reason',
+    'สาเหตุที่ขายไม่ได้':'reason', 'ผรม. (ผู้รับเหมา)':'contractor', 'เบอร์ติดต่อลูกค้า':'customerPhone',
   };
 
   /* ดูงข้อมูลกลับจาก Google Sheet ที่ตน (?action=list) — ให้ทุกเครื่อง/ทุกคนเห็นข้อมูลเดียวกัน */
@@ -79,6 +81,24 @@ window.CPAC = (function(){
         }).filter(e=> e.site);   /* ตัดแทวเปล่าที่ไม่มีชื่อหน่วยงานออก */
       })
       .catch(()=>[]);
+  }
+
+  /* ผสานข้อมูลจาก Google Sheet เข้ากับ localStorage ในเครื่อง
+     (ให้ทุกอุปกรณ์/เบราว์เซอร์เห็นข้อมูลที่คนอื่นกรอกไว้ด้วย) */
+  function syncFromSheet(){
+    if(!SHEET_ENDPOINT) return Promise.resolve(false);
+    return fetchSheetEntries().then(rows=>{
+      if(!rows.length) return false;
+      const local = entries();
+      const localKeys = new Set(local.map(e=> (e.code||'')+'|'+(e.site||'')+'|'+(e.user||'')));
+      let changed = false;
+      rows.forEach(r=>{
+        const key = (r.code||'')+'|'+(r.site||'')+'|'+(r.user||'');
+        if(r.site && !localKeys.has(key)){ local.push(r); localKeys.add(key); changed = true; }
+      });
+      if(changed) saveEntries(local);
+      return changed;
+    }).catch(()=>false);
   }
 
   /* ส่งหน่วยงาน 1 รายการขึ้น Google Sheet (ทำงานแบบ fire-and-forget)
@@ -319,6 +339,6 @@ window.CPAC = (function(){
     fmt, startTxt, dateTxt, MONTH_KEYS, TH_MONTHS, STATUS_TH,
     monthIdx, monthKnown, monthStart, statusMonth, parseLatLng,
     fileToThumb, lightbox,
-    pushToSheet, SHEET_ENDPOINT, fetchSheetEntries,
+    pushToSheet, SHEET_ENDPOINT, fetchSheetEntries, syncFromSheet,
   };
 })();

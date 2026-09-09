@@ -755,6 +755,13 @@ tbody td .code{ font-size:11.5px; color:var(--muted); }
 const ADMIN = CPAC.requireRole('admin', 'CPAC Admin Login.html');
 if(ADMIN){
   CPAC.seed();
+  (function(){
+    const flag = 'cpac_synced_' + location.pathname;
+    if(!sessionStorage.getItem(flag)){
+      sessionStorage.setItem(flag, '1');
+      CPAC.syncFromSheet().then(changed=>{ if(changed) location.reload(); });
+    }
+  })();
   document.getElementById('adminName').textContent = ADMIN.name;
   document.getElementById('adminAv').textContent = CPAC.initials(ADMIN.name);
   document.getElementById('adminLogout').addEventListener('click', ()=>{ CPAC.logout(); location.replace('CPAC Admin Login.html'); });

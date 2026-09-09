@@ -93,7 +93,7 @@
 .sec-title{ font-size:13px; font-weight:700; color:var(--muted); letter-spacing:.4px; text-transform:uppercase; margin:28px 4px 13px; }
 
 /* ---------- action cards ---------- */
-.actions{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+.actions{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:28px; }
 .action{
   display:flex; flex-direction:column; gap:0; text-decoration:none; color:var(--ink);
   background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);
@@ -166,6 +166,29 @@
       <p>ภาพรวมงานขายของคุณ และเมนูสำหรับบันทึกข้อมูล</p>
     </div>
     <div class="date" id="today">—</div>
+  </div>
+
+  <!-- quick actions -->
+  <div class="sec-title">บันทึก & จัดการงาน</div>
+  <div class="actions">
+    <a href="CPAC Sales Form.html" class="action a1">
+      <span class="ic">📱</span>
+      <span class="t">บันทึกข้อมูล (มือถือ)</span>
+      <span class="s">กรอกผ่านมือถือ ถ่ายรูป แนบ GPS</span>
+      <span class="go">เริ่มกรอก ›</span>
+    </a>
+    <a href="CPAC Desktop Form.html" class="action a2">
+      <span class="ic">💻</span>
+      <span class="t">บันทึกข้อมูล (คอม)</span>
+      <span class="s">กรอกผ่านโน้ตบุ๊ก/PC จอกว้าง กรอกเร็ว</span>
+      <span class="go">เริ่มกรอก ›</span>
+    </a>
+    <a href="CPAC My Sites.html" class="action a3">
+      <span class="ic">👤</span>
+      <span class="t">งานของฉัน</span>
+      <span class="s">ดู ค้นหา และแก้ไขหน่วยงานที่บันทึกไว้</span>
+      <span class="go">เปิดรายการ ›</span>
+    </a>
   </div>
 
   <!-- mini dashboard -->
@@ -243,29 +266,6 @@
     <div class="hbars" id="winRateChart"></div>
   </div>
 
-  <!-- quick actions -->
-  <div class="sec-title">บันทึก & จัดการงาน</div>
-  <div class="actions">
-    <a href="CPAC Sales Form.html" class="action a1">
-      <span class="ic">📱</span>
-      <span class="t">บันทึกข้อมูล (มือถือ)</span>
-      <span class="s">กรอกผ่านมือถือ ถ่ายรูป แนบ GPS</span>
-      <span class="go">เริ่มกรอก ›</span>
-    </a>
-    <a href="CPAC Desktop Form.html" class="action a2">
-      <span class="ic">💻</span>
-      <span class="t">บันทึกข้อมูล (คอม)</span>
-      <span class="s">กรอกผ่านโน้ตบุ๊ก/PC จอกว้าง กรอกเร็ว</span>
-      <span class="go">เริ่มกรอก ›</span>
-    </a>
-    <a href="CPAC My Sites.html" class="action a3">
-      <span class="ic">👤</span>
-      <span class="t">งานของฉัน</span>
-      <span class="s">ดู ค้นหา และแก้ไขหน่วยงานที่บันทึกไว้</span>
-      <span class="go">เปิดรายการ ›</span>
-    </a>
-  </div>
-
   <!-- recent -->
   <div class="sec-title">บันทึกล่าสุด</div>
   <div class="recent-card">
@@ -282,6 +282,14 @@
 const S = CPAC.requireRole('staff', 'CPAC Staff Login.html');
 if(S){
   CPAC.seed();
+  /* ดึงข้อมูลล่าสุดจาก Google Sheet มาผสาน (ให้เห็นงานที่กรอกจากเครื่อง/มือถืออื่นด้วย) */
+  (function(){
+    const flag = 'cpac_synced_' + location.pathname;
+    if(!sessionStorage.getItem(flag)){
+      sessionStorage.setItem(flag, '1');
+      CPAC.syncFromSheet().then(changed=>{ if(changed) location.reload(); });
+    }
+  })();
 
   /* user info */
   document.getElementById('avatar').textContent = CPAC.initials(S.name);

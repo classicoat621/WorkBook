@@ -104,6 +104,13 @@
 const S = CPAC.requireRole('staff', 'CPAC Staff Login.html');
 if(S){
   CPAC.seed();
+  (function(){
+    const flag = 'cpac_synced_' + location.pathname;
+    if(!sessionStorage.getItem(flag)){
+      sessionStorage.setItem(flag, '1');
+      CPAC.syncFromSheet().then(changed=>{ if(changed) location.reload(); });
+    }
+  })();
   const listEl = document.getElementById('list');
   const countEl = document.getElementById('count');
   let curFilter = 'all', curSearch = '';
