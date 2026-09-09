@@ -81,10 +81,30 @@ function doPost(e){
   }
 }
 
-/* ?action=list -> คืนทุกแถวในชีตเป็น JSON { rows: [ {หัวคอลัมน์: ค่า, ...}, ... ] }
-   ไม่ใส่ ?action หรือใส่ค่าอื่น -> เช็คสถานะเฉยๆ (เหมือนเดิม) */
+/* ?action=list -> คืนทุกแถวในชีตเป็น JSON { rows: [...] }
+   ?action=resolve&url=... -> แปลงลิงก์ Google Maps แบบสั้น (maps.app.goo.gl/...)
+   ให้เป็นพิกัด lat/lng จริง (ทำที่นี่เพราะเบราว์เซอร์ตามลิงก์ข้ามโดเมนแบบนี้เองไม่ได้)
+   ไม่ใส่ ?action หรือใส่ค่าอื่น -> เช็คสถานะเฉยๆ */
 function doGet(e){
   var action = e && e.parameter && e.parameter.action;
+  if(action === 'resolve'){
+    var url = e.parameter.url;
+    try{
+      var resp = UrlFetchApp.fetch(url, { followRedirects: true, muteHttpExceptions: true });
+      var html = resp.getContentText();
+      var m = html.match(/@(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/);
+      if(!m) m = html.match(/!3d(-?\d{1,3}\.\d+)!4d(-?\d{1,3}\.\d+)/);
+      if(m){
+        return ContentService.createTextOutput(JSON.stringify({ ok:true, lat:parseFloat(m[1]), lng:parseFloat(m[2]) }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+      return ContentService.createTextOutput(JSON.stringify({ ok:false, error:'ไม่พบพิกัดในลิงก์นี้' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }catch(err){
+      return ContentService.createTextOutput(JSON.stringify({ ok:false, error:String(err) }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  }
   if(action === 'list'){
     try{
       var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];

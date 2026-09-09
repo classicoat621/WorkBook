@@ -823,9 +823,18 @@ document.getElementById('reasonOther').addEventListener('input', syncReason);
 
   /* ปุ่ม: ใช้พิกัดที่วางในช่อง */
   document.getElementById('applyCoordBtn').addEventListener('click', ()=>{
-    const ll = CPAC.parseLatLng(mapInput.value);
-    if(ll){ setPin(ll[0], ll[1], true); }
-    else { hint.textContent='อ่านพิกัดไม่ได้ — ลองวางแบบ 13.7757, 100.5275'; hint.classList.remove('ok'); }
+    const val = mapInput.value.trim();
+    const ll = CPAC.parseLatLng(val);
+    if(ll){ setPin(ll[0], ll[1], true); return; }
+    if(/goo\.gl|google\.\w+\/maps|maps\.app/i.test(val)){
+      hint.textContent='กำลังค้นหาตำแหน่งจากลิงก์...'; hint.classList.remove('ok');
+      CPAC.resolveMapShortLink(val).then(res=>{
+        if(res){ setPin(res[0], res[1], true); }
+        else { hint.textContent='หาพิกัดจากลิงก์นี้ไม่ได้ — ลองแตะปักหมุดบนแผนที่แทน'; }
+      });
+      return;
+    }
+    hint.textContent='อ่านพิกัดไม่ได้ — ลองวางแบบ 13.7757, 100.5275'; hint.classList.remove('ok');
   });
   /* วางแล้วกด Enter ก็ใช้ได้ */
   mapInput.addEventListener('change', ()=>{ const ll=CPAC.parseLatLng(mapInput.value); if(ll) setPin(ll[0],ll[1],true); });

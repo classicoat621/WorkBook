@@ -346,11 +346,21 @@ window.CPAC = (function(){
     show();
   }
 
+  /* แปลงลิงก์ Google Maps แบบสั้น (maps.app.goo.gl/...) เป็นพิกัดจริง
+     ผ่าน Apps Script (ต้องขอให้เซิร์ฟเวอร์ตามลิงก์ให้ เพราะเบราว์เซอร์ทำเองไม่ได้ข้ามโดเมน) */
+  function resolveMapShortLink(url){
+    if(!SHEET_ENDPOINT || !url) return Promise.resolve(null);
+    return fetch(SHEET_ENDPOINT + '?action=resolve&url=' + encodeURIComponent(url))
+      .then(r=> r.json())
+      .then(d=> (d && d.ok && typeof d.lat==='number') ? [d.lat, d.lng] : null)
+      .catch(()=> null);
+  }
+
   return {
     USERS, login, loginByUsername, session, logout, requireRole, initials,
     entries, saveEntries, myEntries, findEntry, updateEntry, deleteEntry, seed,
     fmt, startTxt, dateTxt, MONTH_KEYS, TH_MONTHS, STATUS_TH,
-    monthIdx, monthKnown, monthStart, statusMonth, parseLatLng,
+    monthIdx, monthKnown, monthStart, statusMonth, parseLatLng, resolveMapShortLink,
     fileToThumb, lightbox,
     pushToSheet, SHEET_ENDPOINT, fetchSheetEntries, syncFromSheet,
   };
