@@ -81,6 +81,26 @@ function doPost(e){
   }
 }
 
+/* ไล่ตาม redirect ของลิงก์ทีละจังหวะ (สูงสุด 6 ครั้ง) เพื่อหาพิกัด @lat,lng
+   ที่ Google ฝังไว้ในลิงก์ปลายทาง — แม่นยำกว่าค้นในเนื้อหน้าเว็บ */
+function resolveCoordsFromUrl(url){
+  var current = url;
+  for(var i=0;i<6;i++){
+    var m = current.match(/@(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/);
+    if(m) return [parseFloat(m[1]), parseFloat(m[2])];
+    var resp = UrlFetchApp.fetch(current, { followRedirects:false, muteHttpExceptions:true });
+    var headers = resp.getAllHeaders();
+    var loc = headers['Location'] || headers['location'];
+    if(loc){ current = loc; continue; }
+    var html = resp.getContentText();
+    m = html.match(/@(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/);
+    if(!m) m = html.match(/!3d(-?\d{1,3}\.\d+)!4d(-?\d{1,3}\.\d+)/);
+    if(m) return [parseFloat(m[1]), parseFloat(m[2])];
+    break;
+  }
+  return null;
+}
+
 /* ?action=list -> คืนทุกแถวในชีตเป็น JSON { rows: [...] }
    ?action=resolve&url=... -> แปลงลิงก์ Google Maps แบบสั้น (maps.app.goo.gl/...)
    ให้เป็นพิกัด lat/lng จริง (ทำที่นี่เพราะเบราว์เซอร์ตามลิงก์ข้ามโดเมนแบบนี้เองไม่ได้)
@@ -90,12 +110,9 @@ function doGet(e){
   if(action === 'resolve'){
     var url = e.parameter.url;
     try{
-      var resp = UrlFetchApp.fetch(url, { followRedirects: true, muteHttpExceptions: true });
-      var html = resp.getContentText();
-      var m = html.match(/@(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/);
-      if(!m) m = html.match(/!3d(-?\d{1,3}\.\d+)!4d(-?\d{1,3}\.\d+)/);
-      if(m){
-        return ContentService.createTextOutput(JSON.stringify({ ok:true, lat:parseFloat(m[1]), lng:parseFloat(m[2]) }))
+      var coords = resolveCoordsFromUrl(url);
+      if(coords){
+        return ContentService.createTextOutput(JSON.stringify({ ok:true, lat:coords[0], lng:coords[1] }))
           .setMimeType(ContentService.MimeType.JSON);
       }
       return ContentService.createTextOutput(JSON.stringify({ ok:false, error:'ไม่พบพิกัดในลิงก์นี้' }))
