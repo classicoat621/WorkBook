@@ -63,6 +63,9 @@ window.CPAC = (function(){
   /* ดูงข้อมูลกลับจาก Google Sheet ที่ตน (?action=list) — ให้ทุกเครื่อง/ทุกคนเห็นข้อมูลเดียวกัน */
   function fetchSheetEntries(){
     if(!SHEET_ENDPOINT) return Promise.resolve([]);
+    /* ชื่อเต็ม -> username (สำหรับ 6 บัญชีที่ลงทะเบียนไว้ล่วงหน้า) */
+    const nameToKey = {};
+    Object.keys(USERS).forEach(k=>{ nameToKey[USERS[k].name] = k; });
     return fetch(SHEET_ENDPOINT + '?action=list')
       .then(r=> r.json())
       .then(data=>{
@@ -75,6 +78,10 @@ window.CPAC = (function(){
             if(NUM_FIELDS.indexOf(h)>=0) v = Number(v)||0;
             e[key] = v;
           });
+          /* หาว่าแถวนี้เป็นของใคร: เทียบชื่อเจ้าของงานกับบัญชีที่รู้จัก
+             ถ้าไม่รู้จัก (บัญชีพิมพ์เองแบบ ad-hoc) ใช้ชื่อเจ้าของงานเป็น username ตรงๆ */
+          const ownerName = String(e.owner||'').trim();
+          e.user = nameToKey[ownerName] || ownerName.toLowerCase();
           e.photos = e.photosRaw ? String(e.photosRaw).split('\n').filter(Boolean) : [];
           e._id = 'sheet'+i;
           return e;
@@ -90,13 +97,19 @@ window.CPAC = (function(){
     return fetchSheetEntries().then(rows=>{
       if(!rows.length) return false;
       const local = entries();
-      const localKeys = new Set(local.map(e=> (e.code||'')+'|'+(e.site||'')+'|'+(e.user||'')));
+      /* กันซ้ำด้วย Site code + ชื่อหน่วยงาน (ไม่รวม user — กันเผื่อชื่อผู้ใช้เพี้ยนคนละรูปแบบ) */
+      const localKeys = new Set(local.filter(e=>!e._fromSheet).map(e=> (e.code||'')+'|'+(e.site||'')));
+      const sheetKeys = new Set(local.filter(e=>e._fromSheet).map(e=> (e.code||'')+'|'+(e.site||'')));
       let changed = false;
+      /* ลบของเก่าที่มาจากชีต แล้วแทนด้วยชุดล่าสุดทั้งหมด (เพื่อให้แก้ไข/ลบที่ชีตสะท้อนผลด้วย) */
+      const keptLocal = local.filter(e=> !e._fromSheet);
+      const merged = keptLocal.slice();
       rows.forEach(r=>{
-        const key = (r.code||'')+'|'+(r.site||'')+'|'+(r.user||'');
-        if(r.site && !localKeys.has(key)){ local.push(r); localKeys.add(key); changed = true; }
+        const key = (r.code||'')+'|'+(r.site||'');
+        if(r.site && !localKeys.has(key)){ merged.push(r); changed = true; }
       });
-      if(changed) saveEntries(local);
+      if(sheetKeys.size !== rows.length) changed = true;   /* จำนวนจากชีตเปลี่ยนไป (เพิ่ม/ลบ) */
+      if(changed) saveEntries(merged);
       return changed;
     }).catch(()=>false);
   }
