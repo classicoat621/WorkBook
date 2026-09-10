@@ -82,20 +82,33 @@ function doPost(e){
 }
 
 /* ไล่ตาม redirect ของลิงก์ทีละจังหวะ (สูงสุด 6 ครั้ง) เพื่อหาพิกัด @lat,lng
-   ที่ Google ฝังไว้ในลิงก์ปลายทาง — แม่นยำกว่าค้นในเนื้อหน้าเว็บ */
+   ที่ Google ฝังไว้ในลิงก์ปลายทาง — แม่นยำกว่าค้นในเนื้อหน้าเว็บ
+   * ใส่ User-Agent ปลอมเป็นเบราว์เซอร์จริง ไม่งั้น Google อาจส่งหน้า "ยืนยันคุกกี้" มาแทน */
 function resolveCoordsFromUrl(url){
   var current = url;
-  for(var i=0;i<6;i++){
+  var opts = {
+    followRedirects: false,
+    muteHttpExceptions: true,
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
+    }
+  };
+  for(var i=0;i<8;i++){
     var m = current.match(/@(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/);
     if(m) return [parseFloat(m[1]), parseFloat(m[2])];
-    var resp = UrlFetchApp.fetch(current, { followRedirects:false, muteHttpExceptions:true });
+    var resp;
+    try{ resp = UrlFetchApp.fetch(current, opts); }catch(e){ break; }
     var headers = resp.getAllHeaders();
     var loc = headers['Location'] || headers['location'];
     if(loc){ current = loc; continue; }
     var html = resp.getContentText();
     m = html.match(/@(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/);
     if(!m) m = html.match(/!3d(-?\d{1,3}\.\d+)!4d(-?\d{1,3}\.\d+)/);
+    if(!m) m = html.match(/"lat":(-?\d{1,3}\.\d+)[^}]*?"lng":(-?\d{1,3}\.\d+)/);
     if(m) return [parseFloat(m[1]), parseFloat(m[2])];
+    /* หา meta-refresh / window.location redirect ในเนื้อหน้า แล้วไปต่อ */
+    var mr = html.match(/url=(https?:[^"'\s>]+)/i) || html.match(/window\.location(?:\.href)?\s*=\s*["'](https?:[^"']+)["']/i);
+    if(mr){ current = mr[1]; continue; }
     break;
   }
   return null;

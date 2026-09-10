@@ -58,6 +58,7 @@ window.CPAC = (function(){
     'คาดว่าจะใช้งาน':'start', 'วันที่ทราบข้อมูล':'knownDate', 'รายละเอียดโครงการ':'projectDetail',
     'รายละเอียดเพิ่มเติม':'detail', 'แผนที่หน่วยงาน':'mapUrl', 'รูปภาพหน่วยงาน':'photosRaw',
     'สาเหตุที่ขายไม่ได้':'reason', 'ผรม. (ผู้รับเหมา)':'contractor', 'เบอร์ติดต่อลูกค้า':'customerPhone',
+    'คู่แข่งเพิ่มเติม':'competitorsExtraRaw',
   };
 
   /* ดูงข้อมูลกลับจาก Google Sheet ที่ตน (?action=list) — ให้ทุกเครื่อง/ทุกคนเห็นข้อมูลเดียวกัน */
